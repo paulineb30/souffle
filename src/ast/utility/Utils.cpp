@@ -26,6 +26,7 @@
 #include "ast/ExecutionPlan.h"
 #include "ast/FunctorDeclaration.h"
 #include "ast/IntrinsicFunctor.h"
+#include "ast/Lattice.h"
 #include "ast/Literal.h"
 #include "ast/Negation.h"
 #include "ast/Node.h"
@@ -92,6 +93,10 @@ std::vector<AstDirective*> getDirectives(const AstProgram& program, const AstQua
 
 AstRelation* getRelation(const AstProgram& program, const AstQualifiedName& name) {
     return getIf(program.getRelations(), [&](const AstRelation* r) { return r->getQualifiedName() == name; });
+}
+
+AstLattice* getLattice(const AstProgram& program, const AstQualifiedName& name) {
+    return getIf(program.getLattices(), [&](const AstLattice* r) { return r->getName() == name; });
 }
 
 void removeRelation(AstTranslationUnit& tu, const AstQualifiedName& name) {

@@ -31,6 +31,7 @@ class AstClause;
 class AstConstraint;
 class AstFunctorDeclaration;
 class AstIntrinsicFunctor;
+class AstLattice;
 class AstLiteral;
 class AstNode;
 class AstProgram;
@@ -112,6 +113,15 @@ std::vector<AstClause*> getClauses(const AstProgram& program, const AstRelation&
  * @return the relation if it exists; nullptr otherwise
  */
 AstRelation* getRelation(const AstProgram& program, const AstQualifiedName& name);
+
+/**
+ * Returns the lattice with the given name in the program.
+ *
+ * @param program the program
+ * @param name the name of the lattice to search for
+ * @return the relation if it exists; nullptr otherwise
+ */
+AstLattice* getLattice(const AstProgram& program, const AstQualifiedName& name);
 
 /**
  * Remove relation and all its clauses from the program.

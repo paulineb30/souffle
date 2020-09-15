@@ -33,6 +33,7 @@ class AstClause;
 class AstComponent;
 class AstComponentInit;
 class AstFunctorDeclaration;
+class AstLattice;
 class AstPragma;
 class AstRelation;
 class AstDirective;
@@ -58,6 +59,7 @@ public:
 
     void addRelation(std::unique_ptr<AstRelation> r);
     void addFunctorDeclaration(std::unique_ptr<AstFunctorDeclaration> f);
+    void addLattice(std::unique_ptr<AstLattice> f);
     void addDirective(std::unique_ptr<AstDirective> d);
     void addType(std::unique_ptr<AstType> type);
     void addClause(std::unique_ptr<AstClause> c);

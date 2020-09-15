@@ -20,6 +20,7 @@
 #include "ast/Clause.h"
 #include "ast/Directive.h"
 #include "ast/FunctorDeclaration.h"
+#include "ast/Lattice.h"
 #include "ast/Pragma.h"
 #include "ast/QualifiedName.h"
 #include "ast/Relation.h"
@@ -95,5 +96,13 @@ void AstProgram::addFunctorDeclaration(Own<souffle::AstFunctorDeclaration> f) {
     assert(existingFunctorDecl == nullptr && "Redefinition of functor!");
     functors.push_back(std::move(f));
 }
+
+void AstProgram::addLattice(Own<souffle::AstLattice> lattice) {
+    auto* existingLattice = getIf(getLattices(),
+            [&](const AstLattice* current) { return current->getName() == lattice->getName(); });
+    assert(existingLattice == nullptr && "Redefinition of lattice!");
+    lattices.push_back(std::move(lattice));
+}
+
 
 }  // namespace souffle

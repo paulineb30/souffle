@@ -77,6 +77,7 @@
 ".decl"                               { return yy::parser::make_DECL(yylloc); }
 ".functor"                            { return yy::parser::make_FUNCTOR(yylloc); }
 ".input"                              { return yy::parser::make_INPUT_DECL(yylloc); }
+".lattice"                            { return yy::parser::make_LATTICE(yylloc); }
 ".output"                             { return yy::parser::make_OUTPUT_DECL(yylloc); }
 ".printsize"                          { return yy::parser::make_PRINTSIZE_DECL(yylloc); }
 ".limitsize"                          { return yy::parser::make_LIMITSIZE_DECL(yylloc); }

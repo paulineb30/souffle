@@ -21,6 +21,7 @@
 #include "ast/ComponentInit.h"
 #include "ast/Directive.h"
 #include "ast/FunctorDeclaration.h"
+#include "ast/Lattice.h"
 #include "ast/Pragma.h"
 #include "ast/Program.h"
 #include "ast/QualifiedName.h"
@@ -112,6 +113,21 @@ void ParserDriver::addFunctorDeclaration(std::unique_ptr<AstFunctorDeclaration> 
         translationUnit->getErrorReport().addDiagnostic(err);
     } else {
         translationUnit->getProgram()->addFunctorDeclaration(std::move(f));
+    }
+}
+
+void ParserDriver::addLattice(std::unique_ptr<AstLattice> lattice) {
+    const AstQualifiedName& name = lattice->getName();
+    const AstLattice* existingLattice =
+            getIf(translationUnit->getProgram()->getLattices(),
+                    [&](const AstLattice* current) { return current->getName() == name; });
+    if (existingLattice != nullptr) {
+        Diagnostic err(Diagnostic::Type::ERROR,
+                DiagnosticMessage("Redefinition of lattice " + toString(name), lattice->getSrcLoc()),
+                {DiagnosticMessage("Previous definition", existingLattice->getSrcLoc())});
+        translationUnit->getErrorReport().addDiagnostic(err);
+    } else {
+        translationUnit->getProgram()->addLattice(std::move(lattice));
     }
 }
 

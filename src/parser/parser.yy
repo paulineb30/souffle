@@ -54,6 +54,7 @@
     #include "ast/FunctorDeclaration.h"
     #include "ast/Directive.h"
     #include "ast/IntrinsicFunctor.h"
+    #include "ast/Lattice.h"
     #include "ast/Literal.h"
     #include "ast/NilConstant.h"
     #include "ast/NumericConstant.h"
@@ -241,6 +242,7 @@
 %token IF                        ":-"
 %token DECL                      "relation declaration"
 %token FUNCTOR                   "functor declaration"
+%token LATTICE                   "lattice declaration"
 %token INPUT_DECL                "input directives declaration"
 %token OUTPUT_DECL               "output directives declaration"
 %token PRINTSIZE_DECL            "printsize directives declaration"
@@ -334,6 +336,7 @@
 %type <AstDirectiveType>                            directive_head_decl
 %type <Mov<VecOwn<AstDirective>>>                   relation_directive_list
 %type <Mov<std::string>>                     kvp_value
+%type <Mov<Own<AstLattice>>>                 lattice_decl 
 %type <Mov<VecOwn<AstArgument>>>             non_empty_arg_list
 %type <Mov<Own<AstAttribute>>>               attribute
 %type <Mov<VecOwn<AstAttribute>>>            non_empty_attributes
@@ -397,6 +400,7 @@ unit
             driver.addRelation(std::move(rel));
         }
     }
+  | unit lattice_decl   { driver.addLattice($lattice_decl); }
   ;
 
 /**
@@ -921,6 +925,13 @@ kvp_value
   | TRUE    { $$ = "true"; }
   | FALSE   { $$ = "false"; }
   ;
+
+/* Lattice */
+
+lattice_decl
+  : LATTICE IDENT[name] LT IDENT[base] COMMA IDENT[leq] COMMA IDENT[lub] COMMA IDENT[glb] COMMA IDENT[bot] COMMA IDENT[top] GT {
+        $$ = mk<AstLattice>($name, $base, $leq, $lub, $glb, $bot, $top, @$); 
+    }
 
 %%
 

@@ -23,6 +23,7 @@
 #include "ast/ComponentInit.h"
 #include "ast/Directive.h"
 #include "ast/FunctorDeclaration.h"
+#include "ast/Lattice.h"
 #include "ast/Node.h"
 #include "ast/Pragma.h"
 #include "ast/QualifiedName.h"
@@ -66,6 +67,11 @@ public:
     /** Return functor declarations */
     std::vector<AstFunctorDeclaration*> getFunctorDeclarations() const {
         return toPtrVector(functors);
+    }
+
+    /** Return lattices */
+    std::vector<AstLattice*> getLattices() const {
+        return toPtrVector(lattices);
     }
 
     /** Return relation directives */
@@ -121,6 +127,7 @@ public:
         res->instantiations = souffle::clone(instantiations);
         res->types = souffle::clone(types);
         res->functors = souffle::clone(functors);
+        res->lattices = souffle::clone(lattices);
         res->relations = souffle::clone(relations);
         res->clauses = souffle::clone(clauses);
         res->directives = souffle::clone(directives);
@@ -138,6 +145,9 @@ public:
             cur = map(std::move(cur));
         }
         for (auto& cur : functors) {
+            cur = map(std::move(cur));
+        }
+        for (auto& cur : lattices) {
             cur = map(std::move(cur));
         }
         for (auto& cur : types) {
@@ -168,6 +178,9 @@ public:
         for (const auto& cur : functors) {
             res.push_back(cur.get());
         }
+        for (const auto& cur : lattices) {
+            res.push_back(cur.get());
+        }
         for (const auto& cur : types) {
             res.push_back(cur.get());
         }
@@ -194,6 +207,7 @@ protected:
         show(instantiations);
         show(types);
         show(functors);
+        show(lattices);
         show(relations);
         show(clauses, "\n\n");
         show(directives, "\n\n");
@@ -211,6 +225,9 @@ protected:
             return false;
         }
         if (!equal_targets(functors, other.functors)) {
+            return false;
+        }
+        if (!equal_targets(lattices, other.lattices)) {
             return false;
         }
         if (!equal_targets(types, other.types)) {
@@ -238,6 +255,8 @@ protected:
 
     void addFunctorDeclaration(Own<souffle::AstFunctorDeclaration> functor);
 
+    void addLattice(Own<souffle::AstLattice> lattice);
+
     /** Add component */
     void addComponent(Own<AstComponent> c) {
         components.push_back(std::move(c));
@@ -256,6 +275,9 @@ protected:
 
     /** External Functors */
     VecOwn<AstFunctorDeclaration> functors;
+
+    /** External Functors */
+    VecOwn<AstLattice> lattices;
 
     /** Program clauses */
     VecOwn<AstClause> clauses;

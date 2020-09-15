@@ -35,6 +35,11 @@ check_PROGRAMS += ast_program_test
 ast_program_test_SOURCES = ast_program_test.cpp
 ast_program_test_LDADD = $(top_builddir)/src/libsouffle.la
 
+# ast program lattice test
+check_PROGRAMS += ast_program_lattice_test
+ast_program_lattice_test_SOURCES = ast_program_lattice_test.cpp
+ast_program_lattice_test_LDADD = $(top_builddir)/src/libsouffle.la
+
 # ast transformers test
 check_PROGRAMS += ast_transformers_test
 ast_transformers_test_SOURCES = ast_transformers_test.cpp
