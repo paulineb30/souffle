@@ -38,13 +38,13 @@ class RamBinRelationStatement : public RamStatement {
 public:
     RamBinRelationStatement(std::unique_ptr<RamRelationReference> f, std::unique_ptr<RamRelationReference> s)
             : first(std::move(f)), second(std::move(s)) {
-        assert(first->get()->getArity() == second->get()->getArity() && "mismatching arities");
+        assert(first->get()->getConcreteArity() == second->get()->getConcreteArity() && "mismatching arities");
 
         assert(first != nullptr && "First relation is a null-pointer");
         assert(second != nullptr && "Second relation is a null-pointer");
-        const auto& type1 = first->get()->getAttributeTypes();
-        const auto& type2 = first->get()->getAttributeTypes();
-        for (size_t i = 0; i < first->get()->getArity(); i++) {
+        const auto& type1 = first->get()->getConcreteAttributeTypes();
+        const auto& type2 = second->get()->getConcreteAttributeTypes();
+        for (size_t i = 0; i < first->get()->getConcreteArity(); i++) {
             assert(type1[i] == type2[i] && "mismatching type");
         }
     }

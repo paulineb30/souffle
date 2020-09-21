@@ -159,7 +159,7 @@ TEST(RamConstraint, CloneAndEquals) {
 
 TEST(RamExistenceCheck, CloneAndEquals) {
     // N(1) in relation N(x:number)
-    RamRelation N("N", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation N("N", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     std::vector<std::unique_ptr<RamExpression>> tuple_a;
     tuple_a.emplace_back(new RamSignedConstant(1));
     RamExistenceCheck a(std::make_unique<RamRelationReference>(&N), std::move(tuple_a));
@@ -178,7 +178,7 @@ TEST(RamExistenceCheck, CloneAndEquals) {
     delete c;
 
     // edge(1,2) in relation edge(x:number,y:number)
-    RamRelation edge("edge", 2, 1, {"x", "y"}, {"i", "i"}, RelationRepresentation::BRIE);
+    RamRelation edge("edge", 2, 0, 1, {"x", "y"}, {"i", "i"}, {}, {}, RelationRepresentation::BRIE);
     std::vector<std::unique_ptr<RamExpression>> tuple_d;
     tuple_d.emplace_back(new RamSignedConstant(1));
     tuple_d.emplace_back(new RamSignedConstant(2));
@@ -200,7 +200,7 @@ TEST(RamExistenceCheck, CloneAndEquals) {
 }
 
 TEST(RamProvenanceExistCheck, CloneAndEquals) {
-    RamRelation N("N", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation N("N", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     std::vector<std::unique_ptr<RamExpression>> tuple_a;
     tuple_a.emplace_back(new RamSignedConstant(1));
     RamExistenceCheck a(std::make_unique<RamRelationReference>(&N), std::move(tuple_a));
@@ -219,7 +219,7 @@ TEST(RamProvenanceExistCheck, CloneAndEquals) {
     delete c;
 
     // address(state:symbol, postCode:number, street:symbol)
-    RamRelation address("address", 3, 1, {"state", "postCode", "street"}, {"s", "i", "s"},
+    RamRelation address("address", 3, 0, 1, {"state", "postCode", "street"}, {"s", "i", "s"}, {}, {},
             RelationRepresentation::DEFAULT);
     std::vector<std::unique_ptr<RamExpression>> tuple_d;
     tuple_d.emplace_back(new RamSignedConstant(0));
@@ -245,7 +245,7 @@ TEST(RamProvenanceExistCheck, CloneAndEquals) {
 
 TEST(RamEmptinessCheck, CloneAndEquals) {
     // Check A(x:number)
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     RamEmptinessCheck a(std::make_unique<RamRelationReference>(&A));
     RamEmptinessCheck b(std::make_unique<RamRelationReference>(&A));
     EXPECT_EQ(a, b);

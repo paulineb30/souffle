@@ -31,7 +31,7 @@ public:
 
     /** Get arity of relation */
     size_t getArity() const {
-        return relation.getArity();
+        return relation.getConcreteArity();
     }
 
     /** Get data structure of relation */

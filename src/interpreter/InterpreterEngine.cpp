@@ -706,7 +706,7 @@ RamDomain InterpreterEngine::execute(const InterpreterNode* node, InterpreterCon
 
         CASE(ExistenceCheck)
             // construct the pattern tuple
-            size_t arity = cur.getRelation().getArity();
+            size_t arity = cur.getRelation().getConcreteArity();
 
             size_t viewPos = shadow.getViewId();
 
@@ -753,7 +753,7 @@ RamDomain InterpreterEngine::execute(const InterpreterNode* node, InterpreterCon
         CASE(ProvenanceExistenceCheck)
             // construct the pattern tuple
             const auto& superInfo = shadow.getSuperInst();
-            size_t arity = cur.getRelation().getArity();
+            size_t arity = cur.getRelation().getConcreteArity();
 
             // for partial we search for lower and upper boundaries
             RamDomain low[arity];
@@ -924,7 +924,7 @@ RamDomain InterpreterEngine::execute(const InterpreterNode* node, InterpreterCon
 
         CASE(IndexScan)
             // create pattern tuple for range query
-            size_t arity = cur.getRelation().getArity();
+            size_t arity = cur.getRelation().getConcreteArity();
             const auto& superInfo = shadow.getSuperInst();
             RamDomain low[arity];
             RamDomain high[arity];
@@ -1017,7 +1017,7 @@ RamDomain InterpreterEngine::execute(const InterpreterNode* node, InterpreterCon
 
         CASE(IndexChoice)
             // create pattern tuple for range query
-            size_t arity = cur.getRelation().getArity();
+            size_t arity = cur.getRelation().getConcreteArity();
             const auto& superInfo = shadow.getSuperInst();
             RamDomain low[arity];
             RamDomain high[arity];
@@ -1120,7 +1120,7 @@ RamDomain InterpreterEngine::execute(const InterpreterNode* node, InterpreterCon
                 newCtxt.createView(*getRelationHandle(info[0]), info[1], info[2]);
             }
             // init temporary tuple for this level
-            size_t arity = cur.getRelation().getArity();
+            size_t arity = cur.getRelation().getConcreteArity();
             const auto& superInfo = shadow.getSuperInst();
             // get lower and upper boundaries for iteration
             RamDomain low[arity];
@@ -1136,7 +1136,7 @@ RamDomain InterpreterEngine::execute(const InterpreterNode* node, InterpreterCon
 
         CASE(IndexAggregate)
             // init temporary tuple for this level
-            size_t arity = cur.getRelation().getArity();
+            size_t arity = cur.getRelation().getConcreteArity();
             const auto& superInfo = shadow.getSuperInst();
             RamDomain low[arity];
             RamDomain high[arity];
@@ -1177,7 +1177,7 @@ RamDomain InterpreterEngine::execute(const InterpreterNode* node, InterpreterCon
 
         CASE(Project)
             const auto& superInfo = shadow.getSuperInst();
-            size_t arity = cur.getRelation().getArity();
+            size_t arity = cur.getRelation().getConcreteArity();
             RamDomain tuple[arity];
             memcpy(tuple, superInfo.first.data(), sizeof(tuple));
             /* TupleElement */

@@ -469,7 +469,7 @@ void AstToRamTranslator::ClauseTranslator::indexValues(const AstNode* curNode,
 
         // check for variable references
         if (auto var = dynamic_cast<const AstVariable*>(arg)) {
-            if (pos < relation->get()->getArity()) {
+            if (pos < relation->get()->getConcreteArity()) {
                 valueIndex.addVarReference(*var, arg_level[cur], pos, souffle::clone(relation));
             } else {
                 valueIndex.addVarReference(*var, arg_level[cur], pos);
@@ -1020,12 +1020,12 @@ std::unique_ptr<RamStatement> AstToRamTranslator::translateRecursiveRelation(
     auto genMerge = [](const RamRelationReference* dest,
                             const RamRelationReference* src) -> std::unique_ptr<RamStatement> {
         std::vector<std::unique_ptr<RamExpression>> values;
-        if (src->get()->getArity() == 0) {
+        if (src->get()->getConcreteArity() == 0) {
             return std::make_unique<RamQuery>(std::make_unique<RamFilter>(
                     std::make_unique<RamNegation>(std::make_unique<RamEmptinessCheck>(souffle::clone(src))),
                     std::make_unique<RamProject>(souffle::clone(dest), std::move(values))));
         }
-        for (std::size_t i = 0; i < dest->get()->getArity(); i++) {
+        for (std::size_t i = 0; i < dest->get()->getConcreteArity(); i++) {
             values.push_back(std::make_unique<RamTupleElement>(0, i));
         }
         auto stmt = std::make_unique<RamQuery>(std::make_unique<RamScan>(souffle::clone(src), 0,
@@ -1586,28 +1586,39 @@ void AstToRamTranslator::translateProgram(const AstTranslationUnit& translationU
         const auto& allInterns = sccGraph.getInternalRelations(scc);
         for (const auto& rel : allInterns) {
             std::string name = rel->getQualifiedName().toString();
-            auto arity = rel->getConcreteArity();
+            auto concreteArity = rel->getConcreteArity();
+            auto latticeArity = rel->getLatticeArity();
             auto auxiliaryArity = auxArityAnalysis->getArity(rel);
             auto representation = rel->getRepresentation();
-            const auto& attributes = rel->getConcreteAttributes();
-            std::vector<std::string> attributeNames;
-            std::vector<std::string> attributeTypeQualifiers;
+            const auto& concreteAttributes = rel->getConcreteAttributes();
+            const auto& latticeAttributes = rel->getLatticeAttributes();
+            std::vector<std::string> concreteAttributeNames;
+            std::vector<std::string> concreteAttributeTypeQualifiers;
             for (size_t i = 0; i < rel->getConcreteArity(); ++i) {
-                attributeNames.push_back(attributes[i]->getName());
+                concreteAttributeNames.push_back(concreteAttributes[i]->getName());
                 if (typeEnv != nullptr) {
-                    attributeTypeQualifiers.push_back(
-                            getTypeQualifier(typeEnv->getType(attributes[i]->getTypeName())));
+                    concreteAttributeTypeQualifiers.push_back(
+                            getTypeQualifier(typeEnv->getType(concreteAttributes[i]->getTypeName())));
+                }
+            }
+            std::vector<std::string> latticeAttributeNames;
+            std::vector<std::string> latticeAttributeTypeQualifiers;
+            for (size_t i = 0; i < rel->getLatticeArity(); ++i) {
+                latticeAttributeNames.push_back(latticeAttributes[i]->getName());
+                if (typeEnv != nullptr) {
+                    latticeAttributeTypeQualifiers.push_back(
+                            getTypeQualifier(typeEnv->getType(latticeAttributes[i]->getTypeName())));
                 }
             }
             ramRels[name] = std::make_unique<RamRelation>(
-                    name, arity, auxiliaryArity, attributeNames, attributeTypeQualifiers, representation);
+                    name, concreteArity, latticeArity, auxiliaryArity, concreteAttributeNames, concreteAttributeTypeQualifiers, latticeAttributeNames, latticeAttributeTypeQualifiers, representation);
             if (isRecursive) {
                 std::string deltaName = "@delta_" + name;
                 std::string newName = "@new_" + name;
-                ramRels[deltaName] = std::make_unique<RamRelation>(deltaName, arity, auxiliaryArity,
-                        attributeNames, attributeTypeQualifiers, representation);
-                ramRels[newName] = std::make_unique<RamRelation>(newName, arity, auxiliaryArity,
-                        attributeNames, attributeTypeQualifiers, representation);
+                ramRels[deltaName] = std::make_unique<RamRelation>(deltaName, concreteArity, latticeArity, auxiliaryArity,
+                        concreteAttributeNames, concreteAttributeTypeQualifiers, latticeAttributeNames, latticeAttributeTypeQualifiers, representation);
+                ramRels[newName] = std::make_unique<RamRelation>(newName, concreteArity, latticeArity, auxiliaryArity,
+                        concreteAttributeNames, concreteAttributeTypeQualifiers, latticeAttributeNames, latticeAttributeTypeQualifiers, representation);
             }
         }
     }

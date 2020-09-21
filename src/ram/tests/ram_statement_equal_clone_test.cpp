@@ -64,7 +64,7 @@ namespace test {
 
 TEST(RamIO1, CloneAndEquals) {
     // IO A ()
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     std::map<std::string, std::string> ioEmptyA;
     std::map<std::string, std::string> ioEmptyB;
     RamIO a(std::make_unique<RamRelationReference>(&A), std::move(ioEmptyA));
@@ -80,7 +80,7 @@ TEST(RamIO1, CloneAndEquals) {
 
 TEST(RamClear, CloneAndEquals) {
     // CLEAR A
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     RamClear a(std::make_unique<RamRelationReference>(&A));
     RamClear b(std::make_unique<RamRelationReference>(&A));
     EXPECT_EQ(a, b);
@@ -94,8 +94,8 @@ TEST(RamClear, CloneAndEquals) {
 
 TEST(RamExtend, CloneAndEquals) {
     // MERGE B WITH A
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
-    RamRelation B("B", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
+    RamRelation B("B", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     RamExtend a(std::make_unique<RamRelationReference>(&B), std::make_unique<RamRelationReference>(&A));
     RamExtend b(std::make_unique<RamRelationReference>(&B), std::make_unique<RamRelationReference>(&A));
     EXPECT_EQ(a, b);
@@ -109,8 +109,8 @@ TEST(RamExtend, CloneAndEquals) {
 
 TEST(RamSwap, CloneAndEquals) {
     // SWAP(A,B)
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
-    RamRelation B("B", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
+    RamRelation B("B", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     RamSwap a(std::make_unique<RamRelationReference>(&A), std::make_unique<RamRelationReference>(&B));
     RamSwap b(std::make_unique<RamRelationReference>(&A), std::make_unique<RamRelationReference>(&B));
     EXPECT_EQ(a, b);
@@ -123,8 +123,8 @@ TEST(RamSwap, CloneAndEquals) {
 }
 
 TEST(RamQuery, CloneAndEquals) {
-    RamRelation A("A", 3, 1, {"a", "b", "c"}, {"i", "s", "i"}, RelationRepresentation::DEFAULT);
-    RamRelation B("B", 2, 1, {"a", "c"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 3, 0, 1, {"a", "b", "c"}, {"i", "s", "i"}, {}, {}, RelationRepresentation::DEFAULT);
+    RamRelation B("B", 2, 0, 1, {"a", "c"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     /*
      * QUERY
      *  FOR t0 IN A
@@ -201,7 +201,7 @@ TEST(RamSequence, CloneAndEquals) {
     EXPECT_NE(&a, c);
     delete c;
 
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     // one statement in the sequence
     // CLEAR A
     RamSequence d(std::make_unique<RamClear>(std::make_unique<RamRelationReference>(&A)));
@@ -235,8 +235,8 @@ TEST(RamSequence, CloneAndEquals) {
 }
 
 TEST(RamParallel, CloneAndEquals) {
-    RamRelation A("A", 3, 1, {"a", "b", "c"}, {"i", "s", "i"}, RelationRepresentation::DEFAULT);
-    RamRelation B("B", 2, 1, {"a", "c"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 3, 0, 1, {"a", "b", "c"}, {"i", "s", "i"}, {}, {}, RelationRepresentation::DEFAULT);
+    RamRelation B("B", 2, 0, 1, {"a", "c"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
 
     /* PARALLEL
      *  QUERY
@@ -283,8 +283,8 @@ TEST(RamParallel, CloneAndEquals) {
     delete c;
 }
 TEST(RamLoop, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
-    RamRelation B("B", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
+    RamRelation B("B", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     /*
      * LOOP
      *  QUERY
@@ -327,7 +327,7 @@ TEST(RamLoop, CloneAndEquals) {
     delete c;
 }
 TEST(RamExit, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     // EXIT (A = ∅)
     RamExit a(std::make_unique<RamEmptinessCheck>(std::make_unique<RamRelationReference>(&A)));
     RamExit b(std::make_unique<RamEmptinessCheck>(std::make_unique<RamRelationReference>(&A)));
@@ -341,7 +341,7 @@ TEST(RamExit, CloneAndEquals) {
 }
 
 TEST(RamLogRelationTimer, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     /*
      * START_TIMER ON A "file.dl [8:1-8:8]"
      *   IO A()
@@ -365,7 +365,7 @@ TEST(RamLogRelationTimer, CloneAndEquals) {
 }
 
 TEST(RamLogTimer, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     /*
      * START_TIMER "@runtime"
      *   IO .. (..)
@@ -388,9 +388,9 @@ TEST(RamLogTimer, CloneAndEquals) {
 
 TEST(RamDebugInfo, CloneAndEquals) {
     RamRelation edge(
-            "edge", 4, 1, {"src", "dest", "a", "b"}, {"i", "i", "i", "i"}, RelationRepresentation::DEFAULT);
+            "edge", 4, 0, 1, {"src", "dest", "a", "b"}, {"i", "i", "i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     RamRelation path(
-            "path", 4, 1, {"src", "dest", "a", "b"}, {"i", "i", "i", "i"}, RelationRepresentation::DEFAULT);
+            "path", 4, 0, 1, {"src", "dest", "a", "b"}, {"i", "i", "i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     /* BEGIN_DEBUG "path(x,y,1,(@level_num_0+1)) :- \n   edge(x,y,_,@level_num_0).\nin file /edge.dl
      * [17:1-17:26];" QUERY FOR t0 IN edge IF (NOT (edge = ∅)) IF (NOT (t0.0,t0.1,⊥,⊥) ∈ path) PROJECT (t0.0,
      * t0.1, number(1), (t0.3+number(1))) INTO path END DEBUG
@@ -461,7 +461,7 @@ TEST(RamDebugInfo, CloneAndEquals) {
 }
 
 TEST(RamLogSize, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     RamLogSize a(std::make_unique<RamRelationReference>(&A), "Log message");
     RamLogSize b(std::make_unique<RamRelationReference>(&A), "Log message");
     EXPECT_EQ(a, b);

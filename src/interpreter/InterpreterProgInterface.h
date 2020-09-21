@@ -230,8 +230,8 @@ public:
             const RamRelation& rel = *map[name];
 
             // construct types and names vectors
-            std::vector<std::string> types = rel.getAttributeTypes();
-            std::vector<std::string> attrNames = rel.getAttributeNames();
+            std::vector<std::string> types = rel.getConcreteAttributeTypes();
+            std::vector<std::string> attrNames = rel.getConcreteAttributeNames();
 
             auto* interface = new InterpreterRelInterface(
                     interpreterRel, symTable, rel.getName(), types, attrNames, id);

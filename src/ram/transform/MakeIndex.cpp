@@ -384,13 +384,13 @@ std::unique_ptr<RamOperation> MakeIndexTransformer::rewriteAggregate(const RamAg
         const RamRelation& rel = agg->getRelation();
         int identifier = agg->getTupleId();
         RamPattern queryPattern;
-        for (unsigned int i = 0; i < rel.getArity(); ++i) {
+        for (unsigned int i = 0; i < rel.getConcreteArity(); ++i) {
             queryPattern.first.push_back(std::make_unique<RamUndefValue>());
             queryPattern.second.push_back(std::make_unique<RamUndefValue>());
         }
 
         bool indexable = false;
-        std::unique_ptr<RamCondition> condition = constructPattern(rel.getAttributeTypes(), queryPattern,
+        std::unique_ptr<RamCondition> condition = constructPattern(rel.getConcreteAttributeTypes(), queryPattern,
                 indexable, toConjunctionList(&agg->getCondition()), identifier);
         if (indexable) {
             return std::make_unique<RamIndexAggregate>(souffle::clone(&agg->getOperation()),
@@ -407,13 +407,13 @@ std::unique_ptr<RamOperation> MakeIndexTransformer::rewriteScan(const RamScan* s
         const RamRelation& rel = scan->getRelation();
         const int identifier = scan->getTupleId();
         RamPattern queryPattern;
-        for (unsigned int i = 0; i < rel.getArity(); ++i) {
+        for (unsigned int i = 0; i < rel.getConcreteArity(); ++i) {
             queryPattern.first.push_back(std::make_unique<RamUndefValue>());
             queryPattern.second.push_back(std::make_unique<RamUndefValue>());
         }
 
         bool indexable = false;
-        std::unique_ptr<RamCondition> condition = constructPattern(rel.getAttributeTypes(), queryPattern,
+        std::unique_ptr<RamCondition> condition = constructPattern(rel.getConcreteAttributeTypes(), queryPattern,
                 indexable, toConjunctionList(&filter->getCondition()), identifier);
         if (indexable) {
             std::unique_ptr<RamOperation> op = souffle::clone(&filter->getOperation());
@@ -438,7 +438,7 @@ std::unique_ptr<RamOperation> MakeIndexTransformer::rewriteIndexScan(const RamIn
 
         bool indexable = false;
         // strengthen the pattern with construct pattern
-        std::unique_ptr<RamCondition> condition = constructPattern(rel.getAttributeTypes(),
+        std::unique_ptr<RamCondition> condition = constructPattern(rel.getConcreteAttributeTypes(),
                 strengthenedPattern, indexable, toConjunctionList(&filter->getCondition()), identifier);
 
         if (indexable) {

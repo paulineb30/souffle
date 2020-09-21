@@ -589,7 +589,7 @@ SearchSignature searchSignature(size_t arity, Seq const& xs) {
 }  // namespace
 
 SearchSignature RamIndexAnalysis::getSearchSignature(const RamIndexOperation* search) const {
-    size_t arity = search->getRelation().getArity();
+    size_t arity = search->getRelation().getConcreteArity();
 
     auto lower = search->getRangePattern().first;
     auto upper = search->getRangePattern().second;
@@ -631,11 +631,11 @@ SearchSignature RamIndexAnalysis::getSearchSignature(
 }
 
 SearchSignature RamIndexAnalysis::getSearchSignature(const RamExistenceCheck* existCheck) const {
-    return searchSignature(existCheck->getRelation().getArity(), existCheck->getValues());
+    return searchSignature(existCheck->getRelation().getConcreteArity(), existCheck->getValues());
 }
 
 SearchSignature RamIndexAnalysis::getSearchSignature(const RamRelation* ramRel) const {
-    return SearchSignature::getFullSearchSignature(ramRel->getArity());
+    return SearchSignature::getFullSearchSignature(ramRel->getConcreteArity());
 }
 
 bool RamIndexAnalysis::isTotalSignature(const RamAbstractExistenceCheck* existCheck) const {

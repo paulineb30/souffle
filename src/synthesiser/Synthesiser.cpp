@@ -205,7 +205,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             std::stringstream high;
 
             // making this distinction for provenance
-            size_t realArity = rel.getArity();
+            size_t realArity = rel.getConcreteArity();
             size_t arity = rangePatternLower.size();
 
             low << "Tuple<RamDomain," << realArity << ">{{";
@@ -215,7 +215,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
                 std::string supremum;
                 std::string infimum;
 
-                switch (rel.getAttributeTypes()[column][0]) {
+                switch (rel.getConcreteAttributeTypes()[column][0]) {
                     case 'f':
                         supremum = "ramBitCast<RamDomain>(MIN_RAM_FLOAT)";
                         infimum = "ramBitCast<RamDomain>(MAX_RAM_FLOAT)";
@@ -586,7 +586,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
             assert(pscan.getTupleId() == 0 && "not outer-most loop");
 
-            assert(rel.getArity() > 0 && "AstToRamTranslator failed/no parallel scans for nullaries");
+            assert(rel.getConcreteArity() > 0 && "AstToRamTranslator failed/no parallel scans for nullaries");
 
             assert(!preambleIssued && "only first loop can be made parallel");
             preambleIssued = true;
@@ -616,7 +616,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
             PRINT_BEGIN_COMMENT(out);
 
-            assert(rel.getArity() > 0 && "AstToRamTranslator failed/no scans for nullaries");
+            assert(rel.getConcreteArity() > 0 && "AstToRamTranslator failed/no scans for nullaries");
 
             out << "for(const auto& env" << id << " : "
                 << "*" << relName << ") {\n";
@@ -633,7 +633,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             auto relName = synthesiser.getRelationName(rel);
             auto identifier = choice.getTupleId();
 
-            assert(rel.getArity() > 0 && "AstToRamTranslator failed/no choice for nullaries");
+            assert(rel.getConcreteArity() > 0 && "AstToRamTranslator failed/no choice for nullaries");
 
             PRINT_BEGIN_COMMENT(out);
 
@@ -660,7 +660,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
 
             assert(pchoice.getTupleId() == 0 && "not outer-most loop");
 
-            assert(rel.getArity() > 0 && "AstToRamTranslator failed/no parallel choice for nullaries");
+            assert(rel.getConcreteArity() > 0 && "AstToRamTranslator failed/no parallel choice for nullaries");
 
             assert(!preambleIssued && "only first loop can be made parallel");
             preambleIssued = true;
@@ -695,7 +695,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             auto relName = synthesiser.getRelationName(rel);
             auto identifier = iscan.getTupleId();
             auto keys = isa->getSearchSignature(&iscan);
-            auto arity = rel.getArity();
+            auto arity = rel.getConcreteArity();
 
             const auto& rangePatternLower = iscan.getRangePattern().first;
             const auto& rangePatternUpper = iscan.getRangePattern().second;
@@ -720,7 +720,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
         void visitParallelIndexScan(const RamParallelIndexScan& piscan, std::ostream& out) override {
             const auto& rel = piscan.getRelation();
             auto relName = synthesiser.getRelationName(rel);
-            auto arity = rel.getArity();
+            auto arity = rel.getConcreteArity();
             auto keys = isa->getSearchSignature(&piscan);
 
             const auto& rangePatternLower = piscan.getRangePattern().first;
@@ -761,7 +761,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             const auto& rel = ichoice.getRelation();
             auto relName = synthesiser.getRelationName(rel);
             auto identifier = ichoice.getTupleId();
-            auto arity = rel.getArity();
+            auto arity = rel.getConcreteArity();
             const auto& rangePatternLower = ichoice.getRangePattern().first;
             const auto& rangePatternUpper = ichoice.getRangePattern().second;
             auto keys = isa->getSearchSignature(&ichoice);
@@ -794,7 +794,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             PRINT_BEGIN_COMMENT(out);
             const auto& rel = pichoice.getRelation();
             auto relName = synthesiser.getRelationName(rel);
-            auto arity = rel.getArity();
+            auto arity = rel.getConcreteArity();
             const auto& rangePatternLower = pichoice.getRangePattern().first;
             const auto& rangePatternUpper = pichoice.getRangePattern().second;
             auto keys = isa->getSearchSignature(&pichoice);
@@ -871,7 +871,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             PRINT_BEGIN_COMMENT(out);
             // get some properties
             const auto& rel = aggregate.getRelation();
-            auto arity = rel.getArity();
+            auto arity = rel.getConcreteArity();
             auto relName = synthesiser.getRelationName(rel);
             auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
             auto identifier = aggregate.getTupleId();
@@ -1069,7 +1069,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             PRINT_BEGIN_COMMENT(out);
             // get some properties
             const auto& rel = aggregate.getRelation();
-            auto arity = rel.getArity();
+            auto arity = rel.getConcreteArity();
             auto relName = synthesiser.getRelationName(rel);
             auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
             auto identifier = aggregate.getTupleId();
@@ -1543,7 +1543,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
         void visitProject(const RamProject& project, std::ostream& out) override {
             PRINT_BEGIN_COMMENT(out);
             const auto& rel = project.getRelation();
-            auto arity = rel.getArity();
+            auto arity = rel.getConcreteArity();
             auto relName = synthesiser.getRelationName(rel);
             auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
 
@@ -1693,7 +1693,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             const auto& rel = exists.getRelation();
             auto relName = synthesiser.getRelationName(rel);
             auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
-            auto arity = rel.getArity();
+            auto arity = rel.getConcreteArity();
             assert(arity > 0 && "AstToRamTranslator failed");
             std::string after;
             if (Global::config().has("profile") && !exists.getRelation().isTemp()) {
@@ -1730,7 +1730,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             const auto& rel = provExists.getRelation();
             auto relName = synthesiser.getRelationName(rel);
             auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
-            auto arity = rel.getArity();
+            auto arity = rel.getConcreteArity();
             auto auxiliaryArity = rel.getAuxiliaryArity();
 
             // provenance not exists is never total, conduct a range query
@@ -2322,7 +2322,7 @@ void Synthesiser::generateCode(std::ostream& os, const std::string& id, bool& wi
 
     for (auto rel : prog.getRelations()) {
         // get some table details
-        int arity = rel->getArity();
+        int arity = rel->getConcreteArity();
         int auxiliaryArity = rel->getAuxiliaryArity();
         const std::string& datalogName = rel->getName();
         const std::string& cppName = getRelationName(*rel);
@@ -2349,9 +2349,9 @@ void Synthesiser::generateCode(std::ostream& os, const std::string& id, bool& wi
             std::string tupleType = "std::array<const char *," + std::to_string(arity) + ">{{";
             std::string tupleName = "std::array<const char *," + std::to_string(arity) + ">{{";
 
-            if (rel->getArity() != 0u) {
-                const auto& attrib = rel->getAttributeNames();
-                const auto& attribType = rel->getAttributeTypes();
+            if (rel->getConcreteArity() != 0u) {
+                const auto& attrib = rel->getConcreteAttributeNames();
+                const auto& attribType = rel->getConcreteAttributeTypes();
                 tupleType += "\"" + attribType[0] + "\"";
 
                 for (int i = 1; i < arity; i++) {
@@ -2548,7 +2548,7 @@ void Synthesiser::generateCode(std::ostream& os, const std::string& id, bool& wi
     auto dumpRelation = [&](const RamRelation& ramRelation) {
         const auto& relName = getRelationName(ramRelation);
         const auto& name = ramRelation.getName();
-        const auto& attributesTypes = ramRelation.getAttributeTypes();
+        const auto& attributesTypes = ramRelation.getConcreteAttributeTypes();
 
         Json relJson = Json::object{{"arity", static_cast<long long>(attributesTypes.size())},
                 {"auxArity", static_cast<long long>(0)},

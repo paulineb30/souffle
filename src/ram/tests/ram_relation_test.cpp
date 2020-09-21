@@ -58,9 +58,12 @@ const std::string testInterpreterStore(std::vector<std::string> attribs,
 
     const size_t arity = attribs.size();
 
+    std::vector<std::string> latticeAttribs = {};
+    std::vector<std::string> latticeAttribsTypes = {};
+
     std::vector<std::unique_ptr<RamRelation>> rels;
     std::unique_ptr<RamRelation> myrel = std::make_unique<RamRelation>(
-            "test", arity, 0, attribs, attribsTypes, RelationRepresentation::BTREE);
+            "test", arity, 0, 0, attribs, attribsTypes, latticeAttribs, latticeAttribsTypes, RelationRepresentation::BTREE);
 
     std::unique_ptr<RamRelationReference> ref1 = std::make_unique<RamRelationReference>(myrel.get());
     std::unique_ptr<RamRelationReference> ref2 = std::make_unique<RamRelationReference>(myrel.get());
@@ -248,9 +251,11 @@ TEST(IO_store, SignedChangedDelimiter) {
     }
 
     std::vector<std::string> attribsTypes(RANDOM_TESTS, "i");
+    std::vector<std::string> latticeAttribs = {};
+    std::vector<std::string> latticeAttribsTypes = {};
 
     std::unique_ptr<RamRelation> myrel = std::make_unique<RamRelation>(
-            "test", RANDOM_TESTS, 0, attribs, attribsTypes, RelationRepresentation::BTREE);
+            "test", RANDOM_TESTS, 0, 0, attribs, attribsTypes, latticeAttribs, latticeAttribsTypes, RelationRepresentation::BTREE);
     std::unique_ptr<RamRelationReference> ref1 = std::make_unique<RamRelationReference>(myrel.get());
     std::unique_ptr<RamRelationReference> ref2 = std::make_unique<RamRelationReference>(myrel.get());
 
@@ -320,11 +325,12 @@ TEST(IO_store, MixedTypes) {
     std::vector<std::unique_ptr<RamRelation>> rels;
 
     std::vector<std::string> attribs{"t", "o", "s", "i", "a"};
-
     std::vector<std::string> attribsTypes{"i", "u", "f", "f", "s"};
+    std::vector<std::string> latticeAttribs = {};
+    std::vector<std::string> latticeAttribsTypes = {};
 
     std::unique_ptr<RamRelation> myrel =
-            std::make_unique<RamRelation>("test", 5, 0, attribs, attribsTypes, RelationRepresentation::BTREE);
+            std::make_unique<RamRelation>("test", 5, 0, 0, attribs, attribsTypes, latticeAttribs, latticeAttribsTypes, RelationRepresentation::BTREE);
     std::unique_ptr<RamRelationReference> ref1 = std::make_unique<RamRelationReference>(myrel.get());
     std::unique_ptr<RamRelationReference> ref2 = std::make_unique<RamRelationReference>(myrel.get());
 
@@ -399,8 +405,11 @@ TEST(IO_load, Signed) {
 
     std::vector<std::string> attribs = {"a", "b"};
     std::vector<std::string> attribsTypes = {"i", "i"};
+    std::vector<std::string> latticeAttribs = {};
+    std::vector<std::string> latticeAttribsTypes = {};
+
     std::unique_ptr<RamRelation> myrel =
-            std::make_unique<RamRelation>("test", 2, 0, attribs, attribsTypes, RelationRepresentation::BTREE);
+            std::make_unique<RamRelation>("test", 2, 0, 0, attribs, attribsTypes, latticeAttribs, latticeAttribsTypes, RelationRepresentation::BTREE);
     std::unique_ptr<RamRelationReference> ref1 = std::make_unique<RamRelationReference>(myrel.get());
     std::unique_ptr<RamRelationReference> ref2 = std::make_unique<RamRelationReference>(myrel.get());
 
@@ -465,8 +474,11 @@ TEST(IO_load, Float) {
 
     std::vector<std::string> attribs = {"a", "b"};
     std::vector<std::string> attribsTypes = {"f", "f"};
+    std::vector<std::string> latticeAttribs = {};
+    std::vector<std::string> latticeAttribsTypes = {};
+
     std::unique_ptr<RamRelation> myrel =
-            std::make_unique<RamRelation>("test", 2, 0, attribs, attribsTypes, RelationRepresentation::BTREE);
+            std::make_unique<RamRelation>("test", 2, 0, 0, attribs, attribsTypes, latticeAttribs, latticeAttribsTypes, RelationRepresentation::BTREE);
     std::unique_ptr<RamRelationReference> ref1 = std::make_unique<RamRelationReference>(myrel.get());
     std::unique_ptr<RamRelationReference> ref2 = std::make_unique<RamRelationReference>(myrel.get());
 
@@ -531,8 +543,11 @@ TEST(IO_load, Unsigned) {
 
     std::vector<std::string> attribs = {"a", "b"};
     std::vector<std::string> attribsTypes = {"u", "u"};
+    std::vector<std::string> latticeAttribs = {};
+    std::vector<std::string> latticeAttribsTypes = {};
+
     std::unique_ptr<RamRelation> myrel =
-            std::make_unique<RamRelation>("test", 2, 0, attribs, attribsTypes, RelationRepresentation::BTREE);
+            std::make_unique<RamRelation>("test", 2, 0, 0, attribs, attribsTypes, latticeAttribs, latticeAttribsTypes, RelationRepresentation::BTREE);
     std::unique_ptr<RamRelationReference> ref1 = std::make_unique<RamRelationReference>(myrel.get());
     std::unique_ptr<RamRelationReference> ref2 = std::make_unique<RamRelationReference>(myrel.get());
 
@@ -597,8 +612,11 @@ TEST(IO_load, MixedTypesLoad) {
 
     std::vector<std::string> attribs = {"l", "u", "b", "a"};
     std::vector<std::string> attribsTypes = {"s", "i", "u", "f"};
+    std::vector<std::string> latticeAttribs = {};
+    std::vector<std::string> latticeAttribsTypes = {};
+
     std::unique_ptr<RamRelation> myrel =
-            std::make_unique<RamRelation>("test", 4, 0, attribs, attribsTypes, RelationRepresentation::BTREE);
+            std::make_unique<RamRelation>("test", 4, 0, 0, attribs, attribsTypes, latticeAttribs, latticeAttribsTypes, RelationRepresentation::BTREE);
     std::unique_ptr<RamRelationReference> ref1 = std::make_unique<RamRelationReference>(myrel.get());
     std::unique_ptr<RamRelationReference> ref2 = std::make_unique<RamRelationReference>(myrel.get());
 

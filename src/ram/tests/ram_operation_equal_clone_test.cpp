@@ -56,7 +56,7 @@
 namespace souffle::test {
 
 TEST(RamScan, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     // FOR t0 in A
     //  RETURN number(0)
     std::vector<std::unique_ptr<RamExpression>> a_return_args;
@@ -79,7 +79,7 @@ TEST(RamScan, CloneAndEquals) {
 }
 
 TEST(RamParallelScan, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     // PARALLEL FOR t0 in A
     //  RETURN number(0)
     std::vector<std::unique_ptr<RamExpression>> a_return_args;
@@ -104,8 +104,8 @@ TEST(RamParallelScan, CloneAndEquals) {
 }
 
 TEST(RamIndexScan, CloneAndEquals) {
-    RamRelation edge("edge", 2, 1, {"x", "y"}, {"i", "i"}, RelationRepresentation::DEFAULT);
-    RamRelation vertex("vertex", 1, 1, {"x"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation edge("edge", 2, 0, 1, {"x", "y"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
+    RamRelation vertex("vertex", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     // get vertices contain self loop
     // FOR t1 IN edge ON INDEX t1.x = t1.1 AND t1.y = ⊥
     //  PROJECT (t1.0) INTO vertex
@@ -144,8 +144,8 @@ TEST(RamIndexScan, CloneAndEquals) {
 }
 
 TEST(RamParallelIndexScan, CloneAndEquals) {
-    RamRelation edge("edge", 2, 1, {"x", "y"}, {"i", "i"}, RelationRepresentation::DEFAULT);
-    RamRelation new_edge("new_edge", 2, 1, {"x", "y"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation edge("edge", 2, 0, 1, {"x", "y"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
+    RamRelation new_edge("new_edge", 2, 0, 1, {"x", "y"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     // get edges direct to vertex 5
     // PARALLEL FOR t1 IN edge ON INDEX t1.x = ⊥ AND t1.y = 5
     //  PROJECT (t1.0, t1.1) INTO new_edge
@@ -186,7 +186,7 @@ TEST(RamParallelIndexScan, CloneAndEquals) {
 }
 
 TEST(RamChoice, CloneAndEquals) {
-    RamRelation edge("edge", 2, 1, {"x", "y"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation edge("edge", 2, 0, 1, {"x", "y"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     // choose an edge not adjcent to vertex 5
     // CHOICE t1 IN edge WHERE NOT t1.0 = 5 AND NOT t1.1 = 5
     //  RETURN (t1.0, t1.1)
@@ -228,7 +228,7 @@ TEST(RamChoice, CloneAndEquals) {
 }
 
 TEST(RamParallelChoice, CloneAndEquals) {
-    RamRelation edge("edge", 2, 1, {"x", "y"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation edge("edge", 2, 0, 1, {"x", "y"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     // parallel choose an edge not adjcent to vertex 5
     // PARALLEL CHOICE t1 IN edge WHERE NOT t1.0 = 5 AND NOT t1.1 = 5
     //  RETURN (t1.0, t1.1)
@@ -270,7 +270,7 @@ TEST(RamParallelChoice, CloneAndEquals) {
 }
 
 TEST(RamIndexChoice, CloneAndEquals) {
-    RamRelation edge("edge", 2, 1, {"x", "y"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation edge("edge", 2, 0, 1, {"x", "y"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     // FOR t1 IN edge ON INDEX t1.x = 5 AND t1.y = ⊥
     // WHERE NOT t1.1 = 5
     //  RETURN (t1.0, t1.1)
@@ -313,7 +313,7 @@ TEST(RamIndexChoice, CloneAndEquals) {
 }
 
 TEST(RamiParallelIndexChoice, CloneAndEquals) {
-    RamRelation edge("edge", 2, 1, {"x", "y"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation edge("edge", 2, 0, 1, {"x", "y"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     // PARALLEL FOR t1 IN edge ON INDEX t1.x = 5 AND t1.y = ⊥
     // WHERE NOT t1.1 = 5
     //  RETURN (t1.0, t1.1)
@@ -356,7 +356,7 @@ TEST(RamiParallelIndexChoice, CloneAndEquals) {
 }
 
 TEST(RamAggregate, CloneAndEquals) {
-    RamRelation edge("edge", 2, 1, {"x", "y"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation edge("edge", 2, 0, 1, {"x", "y"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     // t0.0 = COUNT FOR ALL t1 IN edge
     //  RETURN t0.0
     std::vector<std::unique_ptr<RamExpression>> a_return_args;
@@ -380,7 +380,7 @@ TEST(RamAggregate, CloneAndEquals) {
 }
 
 TEST(RamIndexAggregate, CloneAndEquals) {
-    RamRelation sqrt("sqrt", 2, 1, {"nth", "value"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation sqrt("sqrt", 2, 0, 1, {"nth", "value"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     // t0.0 = MIN t1.1 SEARCH t1 IN sqrt ON INDEX t1.0 = ⊥ AND t1.1 = ⊥
     // WHERE t1.1 > 80
     //  RETURN t0.0
@@ -448,7 +448,7 @@ TEST(RamUnpackedRecord, CloneAndEquals) {
 }
 
 TEST(RamFilter, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"a"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"a"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     // IF (NOT t0.1 in A)
     // RETURN number(0)
     std::vector<std::unique_ptr<RamExpression>> a_return_args;
@@ -480,7 +480,7 @@ TEST(RamFilter, CloneAndEquals) {
 }
 
 TEST(RamBreak, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"a"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"a"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     // IF (A = ∅) BREAK
     // RETURN number(0)
     std::vector<std::unique_ptr<RamExpression>> a_return_args;
@@ -504,7 +504,7 @@ TEST(RamBreak, CloneAndEquals) {
 }
 
 TEST(RamProject, CloneAndEquals) {
-    RamRelation A("A", 2, 1, {"a", "b"}, {"i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 2, 0, 1, {"a", "b"}, {"i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     // PROJECT (t0.1, t0.3) INTO A
     std::vector<std::unique_ptr<RamExpression>> a_args;
     a_args.emplace_back(new RamTupleElement(0, 1));

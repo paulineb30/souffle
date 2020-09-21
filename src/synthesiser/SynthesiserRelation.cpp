@@ -57,7 +57,7 @@ std::unique_ptr<SynthesiserRelation> SynthesiserRelation::getSynthesiserRelation
         rel = new SynthesiserInfoRelation(ramRel, indexSet, isProvenance);
     } else {
         // Handle the data structure command line flag
-        if (ramRel.getArity() > 6) {
+        if (ramRel.getConcreteArity() > 6) {
             rel = new SynthesiserIndirectRelation(ramRel, indexSet, isProvenance);
         } else {
             rel = new SynthesiserDirectRelation(ramRel, indexSet, isProvenance);
@@ -167,7 +167,7 @@ std::string SynthesiserDirectRelation::getTypeName() {
     }
 
     std::stringstream res;
-    res << "t_btree_" << getTypeAttributeString(relation.getAttributeTypes(), attributesUsed);
+    res << "t_btree_" << getTypeAttributeString(relation.getConcreteAttributeTypes(), attributesUsed);
 
     for (auto& ind : getIndices()) {
         res << "__" << join(ind, "_");
@@ -184,7 +184,7 @@ std::string SynthesiserDirectRelation::getTypeName() {
 void SynthesiserDirectRelation::generateTypeStruct(std::ostream& out) {
     size_t arity = getArity();
     size_t auxiliaryArity = relation.getAuxiliaryArity();
-    auto types = relation.getAttributeTypes();
+    auto types = relation.getConcreteAttributeTypes();
     const auto& inds = getIndices();
     size_t numIndexes = inds.size();
     std::map<MinIndexSelection::LexOrder, int> indexToNumMap;
@@ -537,7 +537,7 @@ std::string SynthesiserIndirectRelation::getTypeName() {
     }
 
     std::stringstream res;
-    res << "t_btree_" << getTypeAttributeString(relation.getAttributeTypes(), attributesUsed);
+    res << "t_btree_" << getTypeAttributeString(relation.getConcreteAttributeTypes(), attributesUsed);
 
     for (auto& ind : getIndices()) {
         res << "__" << join(ind, "_");
@@ -864,7 +864,7 @@ std::string SynthesiserBrieRelation::getTypeName() {
     }
 
     std::stringstream res;
-    res << "t_brie_" << getTypeAttributeString(relation.getAttributeTypes(), attributesUsed);
+    res << "t_brie_" << getTypeAttributeString(relation.getConcreteAttributeTypes(), attributesUsed);
 
     for (auto& ind : getIndices()) {
         res << "__" << join(ind, "_");

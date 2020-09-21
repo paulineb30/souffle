@@ -25,8 +25,8 @@ namespace souffle {
 namespace test {
 
 TEST(RamRelation, CloneAndEquals) {
-    RamRelation a("A", 4, 1, {"a", "b", "c", "d"}, {"i", "i", "i", "i"}, RelationRepresentation::DEFAULT);
-    RamRelation b("A", 4, 1, {"a", "b", "c", "d"}, {"i", "i", "i", "i"}, RelationRepresentation::DEFAULT);
+    RamRelation a("A", 4, 0, 1, {"a", "b", "c", "d"}, {"i", "i", "i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
+    RamRelation b("A", 4, 0, 1, {"a", "b", "c", "d"}, {"i", "i", "i", "i"}, {}, {}, RelationRepresentation::DEFAULT);
     EXPECT_EQ(a, b);
     EXPECT_NE(&a, &b);
 
@@ -37,7 +37,7 @@ TEST(RamRelation, CloneAndEquals) {
 }
 
 TEST(RamRelationRepresentation, CloneAndEquals) {
-    RamRelation A("A", 1, 1, {"a"}, {"i"}, RelationRepresentation::DEFAULT);
+    RamRelation A("A", 1, 0, 1, {"a"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     RamRelationReference a(&A);
     RamRelationReference b(&A);
     EXPECT_EQ(a, b);

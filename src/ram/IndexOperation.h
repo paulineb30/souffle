@@ -47,8 +47,8 @@ public:
             std::unique_ptr<RamOperation> nested, std::string profileText = "")
             : RamRelationOperation(std::move(r), ident, std::move(nested), std::move(profileText)),
               queryPattern(std::move(queryPattern)) {
-        assert(getRangePattern().first.size() == getRelation().getArity() &&
-                getRangePattern().second.size() == getRelation().getArity());
+        assert(getRangePattern().first.size() == getRelation().getConcreteArity() &&
+                getRangePattern().second.size() == getRelation().getConcreteArity());
         for (const auto& pattern : queryPattern.first) {
             assert(pattern != nullptr && "pattern is a null-pointer");
         }
@@ -105,7 +105,7 @@ public:
     void printIndex(std::ostream& os) const {
         //  const auto& attrib = getRelation().getAttributeNames();
         bool first = true;
-        for (unsigned int i = 0; i < getRelation().getArity(); ++i) {
+        for (unsigned int i = 0; i < getRelation().getConcreteArity(); ++i) {
             // TODO: print proper upper lower/bound
 
             // early exit if no upper/lower bounds are defined

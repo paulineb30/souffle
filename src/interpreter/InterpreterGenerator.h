@@ -648,14 +648,14 @@ private:
             relations.resize(idx + 1);
         }
         if (id.getRepresentation() == RelationRepresentation::EQREL) {
-            res = std::make_unique<InterpreterEqRelation>(id.getArity(), id.getAuxiliaryArity(), id.getName(),
+            res = std::make_unique<InterpreterEqRelation>(id.getConcreteArity(), id.getAuxiliaryArity(), id.getName(),
                     std::vector<std::string>(), orderSet);
         } else {
             if (isProvenance) {
-                res = std::make_unique<InterpreterRelation>(id.getArity(), id.getAuxiliaryArity(),
+                res = std::make_unique<InterpreterRelation>(id.getConcreteArity(), id.getAuxiliaryArity(),
                         id.getName(), std::vector<std::string>(), orderSet, createBTreeProvenanceIndex);
             } else {
-                res = std::make_unique<InterpreterRelation>(id.getArity(), id.getAuxiliaryArity(),
+                res = std::make_unique<InterpreterRelation>(id.getConcreteArity(), id.getAuxiliaryArity(),
                         id.getName(), std::vector<std::string>(), orderSet);
             }
         }
@@ -666,7 +666,7 @@ private:
      * @brief Encode and return the super-instruction information about a index operation.
      */
     InterpreterSuperInstruction getIndexSuperInstInfo(const RamIndexOperation& ramIndex) {
-        size_t arity = ramIndex.getRelation().getArity();
+        size_t arity = ramIndex.getRelation().getConcreteArity();
         InterpreterSuperInstruction indexOperation(arity);
         const auto& first = ramIndex.getRangePattern().first;
         for (size_t i = 0; i < arity; ++i) {
@@ -729,7 +729,7 @@ private:
      * @brief Encode and return the super-instruction information about an existence check operation
      */
     InterpreterSuperInstruction getExistenceSuperInstInfo(const RamAbstractExistenceCheck& exist) {
-        size_t arity = exist.getRelation().getArity();
+        size_t arity = exist.getRelation().getConcreteArity();
         InterpreterSuperInstruction superOp(arity);
         const auto& children = exist.getValues();
         for (size_t i = 0; i < arity; ++i) {
@@ -765,7 +765,7 @@ private:
      * @brief Encode and return the super-instruction information about a project operation
      */
     InterpreterSuperInstruction getProjectSuperInstInfo(const RamProject& exist) {
-        size_t arity = exist.getRelation().getArity();
+        size_t arity = exist.getRelation().getConcreteArity();
         InterpreterSuperInstruction superOp(arity);
         const auto& children = exist.getValues();
         for (size_t i = 0; i < arity; ++i) {

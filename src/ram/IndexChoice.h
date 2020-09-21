@@ -58,8 +58,8 @@ public:
             : RamIndexOperation(std::move(r), ident, std::move(queryPattern), std::move(nested),
                       std::move(profileText)),
               RamAbstractChoice(std::move(cond)) {
-        assert(getRangePattern().first.size() == getRelation().getArity());
-        assert(getRangePattern().second.size() == getRelation().getArity());
+        assert(getRangePattern().first.size() == getRelation().getConcreteArity());
+        assert(getRangePattern().second.size() == getRelation().getConcreteArity());
     }
 
     void apply(const RamNodeMapper& map) override {
