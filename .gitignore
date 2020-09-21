@@ -46,3 +46,6 @@ stamp-h1
 
 utilities/bash-completion
 debian/changelog
+
+src/*/tests/*
+!src/*/tests/*.cpp

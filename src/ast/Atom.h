@@ -44,17 +44,12 @@ namespace souffle {
  */
 class AstAtom : public AstLiteral {
 public:
-    AstAtom(AstQualifiedName name = {}, VecOwn<AstArgument> args = {}, SrcLocation loc = {})
-            : AstLiteral(std::move(loc)), name(std::move(name)), arguments(std::move(args)) {}
+    AstAtom(AstQualifiedName name = {}, VecOwn<AstArgument> concreteArgs = {}, VecOwn<AstArgument> latticeArgs = {},SrcLocation loc = {})
+            : AstLiteral(std::move(loc)), name(std::move(name)), concreteArguments(std::move(concreteArgs)), latticeArguments(std::move(latticeArgs)) {}
 
     /** Return qualified name */
     const AstQualifiedName& getQualifiedName() const {
         return name;
-    }
-
-    /** Return arity of the atom */
-    size_t getArity() const {
-        return arguments.size();
     }
 
     /** Set qualified name */
@@ -62,29 +57,55 @@ public:
         name = std::move(n);
     }
 
-    /** Add argument to the atom */
-    void addArgument(Own<AstArgument> arg) {
-        arguments.push_back(std::move(arg));
+    /** Return concrete arity of the atom */
+    size_t getConcreteArity() const {
+        return concreteArguments.size();
     }
 
-    /** Return arguments */
-    std::vector<AstArgument*> getArguments() const {
-        return toPtrVector(arguments);
+    /** Add concrete argument to the atom */
+    void addConcreteArgument(Own<AstArgument> arg) {
+        concreteArguments.push_back(std::move(arg));
+    }
+
+    /** Return concrete arguments */
+    std::vector<AstArgument*> getConcreteArguments() const {
+        return toPtrVector(concreteArguments);
+    }
+
+    /** Return lattice arity of the atom */
+    size_t getLatticeArity() const {
+        return latticeArguments.size();
+    }
+
+    /** Add lattice argument to the atom */
+    void addLatticeArgument(Own<AstArgument> arg) {
+        latticeArguments.push_back(std::move(arg));
+    }
+
+    /** Return lattice arguments */
+    std::vector<AstArgument*> getLatticeArguments() const {
+        return toPtrVector(latticeArguments);
     }
 
     AstAtom* clone() const override {
-        return new AstAtom(name, souffle::clone(arguments), getSrcLoc());
+        return new AstAtom(name, souffle::clone(concreteArguments), souffle::clone(latticeArguments), getSrcLoc());
     }
 
     void apply(const AstNodeMapper& map) override {
-        for (auto& arg : arguments) {
+        for (auto& arg : concreteArguments) {
+            arg = map(std::move(arg));
+        }
+        for (auto& arg : latticeArguments) {
             arg = map(std::move(arg));
         }
     }
 
     std::vector<const AstNode*> getChildNodes() const override {
         std::vector<const AstNode*> res;
-        for (auto& cur : arguments) {
+        for (auto& cur : concreteArguments) {
+            res.push_back(cur.get());
+        }
+        for (auto& cur : latticeArguments) {
             res.push_back(cur.get());
         }
         return res;
@@ -92,19 +113,26 @@ public:
 
 protected:
     void print(std::ostream& os) const override {
-        os << getQualifiedName() << "(" << join(arguments) << ")";
+        os << getQualifiedName() << "(" << join(concreteArguments);
+        if (!latticeArguments.empty()) {
+            os << "; " << join(latticeArguments);
+        }
+        os << ")";
     }
 
     bool equal(const AstNode& node) const override {
         const auto& other = static_cast<const AstAtom&>(node);
-        return name == other.name && equal_targets(arguments, other.arguments);
+        return name == other.name && equal_targets(concreteArguments, other.concreteArguments) && equal_targets(latticeArguments, other.latticeArguments);
     }
 
     /** Name of atom */
     AstQualifiedName name;
 
-    /** Arguments of atom */
-    VecOwn<AstArgument> arguments;
+    /** Concrete arguments of atom */
+    VecOwn<AstArgument> concreteArguments;
+
+    /** Lattice arguments of atom */
+    VecOwn<AstArgument> latticeArguments;
 };
 
 }  // end of namespace souffle

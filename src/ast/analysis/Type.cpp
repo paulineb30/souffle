@@ -783,8 +783,8 @@ private:
             return;  // error in input program
         }
 
-        auto atts = rel->getAttributes();
-        auto args = atom.getArguments();
+        auto atts = rel->getConcreteAttributes();
+        auto args = atom.getConcreteArguments();
         if (atts.size() != args.size()) {
             return;  // error in input program
         }

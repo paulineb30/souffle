@@ -95,7 +95,7 @@ sips_t ReorderLiteralsTransformer::getSipsFunction(const std::string& sipsChosen
                     return i;
                 }
 
-                int arity = currAtom->getArity();
+                int arity = currAtom->getConcreteArity();
                 int numBound = bindingStore.numBoundArguments(currAtom);
                 if (numBound == arity) {
                     // all arguments are bound!
@@ -166,7 +166,7 @@ sips_t ReorderLiteralsTransformer::getSipsFunction(const std::string& sipsChosen
                 }
 
                 int numBound = bindingStore.numBoundArguments(currAtom);
-                int numArgs = currAtom->getArity();
+                int numArgs = currAtom->getConcreteArity();
                 auto currRatio = std::pair<int, int>(numBound, numArgs);
                 if (isLargerRatio(currRatio, currMaxRatio)) {
                     currMaxRatio = currRatio;
@@ -196,7 +196,7 @@ sips_t ReorderLiteralsTransformer::getSipsFunction(const std::string& sipsChosen
                 }
 
                 int numBound = bindingStore.numBoundArguments(currAtom);
-                int numFree = currAtom->getArity() - numBound;
+                int numFree = currAtom->getConcreteArity() - numBound;
                 if (currLeastFree == -1 || numFree < currLeastFree) {
                     currLeastFree = numFree;
                     currLeastIdx = i;
@@ -278,7 +278,7 @@ std::vector<unsigned int> ReorderLiteralsTransformer::getOrderingAfterSIPS(
 
         // set all arguments that are variables as bound
         // note: arguments that are functors, etc., do not newly bind anything
-        for (AstArgument* arg : nextAtom->getArguments()) {
+        for (AstArgument* arg : nextAtom->getConcreteArguments()) {
             if (auto* var = dynamic_cast<AstVariable*>(arg)) {
                 bindingStore.bindVariableStrongly(var->getName());
             }
@@ -373,7 +373,7 @@ bool ReorderLiteralsTransformer::transform(AstTranslationUnit& translationUnit) 
 
                 // calculate log(|R|) * #free/#args
                 int numBound = bindingStore.numBoundArguments(currAtom);
-                int numArgs = currAtom->getArity();
+                int numArgs = currAtom->getConcreteArity();
                 int numFree = numArgs - numBound;
                 double value = log(profileUse->getRelationSize(currAtom->getQualifiedName()));
                 value *= (numFree * 1.0) / numArgs;

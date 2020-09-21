@@ -135,7 +135,7 @@ std::set<const AstRelation*> getBodyRelations(const AstClause* clause, const Ast
         visitDepthFirst(
                 *lit, [&](const AstAtom& atom) { bodyRelations.insert(getAtomRelation(&atom, program)); });
     }
-    for (const auto& arg : clause->getHead()->getArguments()) {
+    for (const auto& arg : clause->getHead()->getConcreteArguments()) {
         visitDepthFirst(
                 *arg, [&](const AstAtom& atom) { bodyRelations.insert(getAtomRelation(&atom, program)); });
     }
@@ -237,7 +237,7 @@ bool isRule(const AstClause& clause) {
 }
 
 bool isProposition(const AstAtom* atom) {
-    return atom->getArguments().empty();
+    return atom->getConcreteArguments().empty();
 }
 
 AstClause* cloneHead(const AstClause* clause) {

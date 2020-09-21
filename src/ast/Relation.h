@@ -57,25 +57,46 @@ public:
         name = std::move(n);
     }
 
-    /** Add a new used type to this relation */
-    void addAttribute(Own<AstAttribute> attr) {
+    /** Add a new concrete type to this relation */
+    void addConcreteAttribute(Own<AstAttribute> attr) {
         assert(attr && "Undefined attribute");
-        attributes.push_back(std::move(attr));
+        concreteAttributes.push_back(std::move(attr));
     }
 
-    /** Return the arity of this relation */
-    size_t getArity() const {
-        return attributes.size();
+    /** Return the concrete arity of this relation */
+    size_t getConcreteArity() const {
+        return concreteAttributes.size();
     }
 
-    /** Set relation attributes */
-    void setAttributes(VecOwn<AstAttribute> attrs) {
-        attributes = std::move(attrs);
+    /** Set concrete relation attributes */
+    void setConcreteAttributes(VecOwn<AstAttribute> attrs) {
+        concreteAttributes = std::move(attrs);
     }
 
-    /** Get relation attributes */
-    std::vector<AstAttribute*> getAttributes() const {
-        return toPtrVector(attributes);
+    /** Get concrete relation attributes */
+    std::vector<AstAttribute*> getConcreteAttributes() const {
+        return toPtrVector(concreteAttributes);
+    }
+
+    /** Add a new lattice type to this relation */
+    void addLatticeAttribute(Own<AstAttribute> attr) {
+        assert(attr && "Undefined attribute");
+        latticeAttributes.push_back(std::move(attr));
+    }
+
+    /** Return the lattice arity of this relation */
+    size_t getLatticeArity() const {
+        return latticeAttributes.size();
+    }
+
+    /** Set lattice relation attributes */
+    void setLatticeAttributes(VecOwn<AstAttribute> attrs) {
+        latticeAttributes = std::move(attrs);
+    }
+
+    /** Get lattice relation attributes */
+    std::vector<AstAttribute*> getLatticeAttributes() const {
+        return toPtrVector(latticeAttributes);
     }
 
     /** Get relation qualifiers */
@@ -110,21 +131,28 @@ public:
 
     AstRelation* clone() const override {
         auto res = new AstRelation(name, getSrcLoc());
-        res->attributes = souffle::clone(attributes);
+        res->concreteAttributes = souffle::clone(concreteAttributes);
+        res->latticeAttributes = souffle::clone(latticeAttributes);
         res->qualifiers = qualifiers;
         res->representation = representation;
         return res;
     }
 
     void apply(const AstNodeMapper& map) override {
-        for (auto& cur : attributes) {
+        for (auto& cur : concreteAttributes) {
+            cur = map(std::move(cur));
+        }
+        for (auto& cur : latticeAttributes) {
             cur = map(std::move(cur));
         }
     }
 
     std::vector<const AstNode*> getChildNodes() const override {
         std::vector<const AstNode*> res;
-        for (const auto& cur : attributes) {
+        for (const auto& cur : concreteAttributes) {
+            res.push_back(cur.get());
+        }
+        for (const auto& cur : latticeAttributes) {
             res.push_back(cur.get());
         }
         return res;
@@ -132,20 +160,28 @@ public:
 
 protected:
     void print(std::ostream& os) const override {
-        os << ".decl " << getQualifiedName() << "(" << join(attributes, ", ") << ")" << join(qualifiers, " ")
-           << " " << representation;
+        os << ".decl " << getQualifiedName() << "(";
+        os << join(concreteAttributes, ", ");
+        if (!latticeAttributes.empty()) {
+            os << "; " << join(latticeAttributes, ", ");
+        }
+        os << ")" << join(qualifiers, " ");
+        os << " " << representation;
     }
 
     bool equal(const AstNode& node) const override {
         const auto& other = static_cast<const AstRelation&>(node);
-        return name == other.name && equal_targets(attributes, other.attributes);
+        return name == other.name && equal_targets(concreteAttributes, other.concreteAttributes) && equal_targets(latticeAttributes, other.latticeAttributes);
     }
 
     /** Name of relation */
     AstQualifiedName name;
 
-    /** Attributes of the relation */
-    VecOwn<AstAttribute> attributes;
+    /** Concrete attributes of the relation */
+    VecOwn<AstAttribute> concreteAttributes;
+
+    /** Lattice attributes of the relation */
+    VecOwn<AstAttribute> latticeAttributes;
 
     /** Qualifiers of relation */
     std::set<RelationQualifier> qualifiers;

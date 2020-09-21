@@ -225,7 +225,7 @@ std::unique_ptr<AstClause> ResolveAliasesTransformer::resolveAliases(const AstCl
     // be resolved
     std::set<std::string> baseGroundedVariables;
     for (const auto* atom : getBodyLiterals<AstAtom>(clause)) {
-        for (const AstArgument* arg : atom->getArguments()) {
+        for (const AstArgument* arg : atom->getConcreteArguments()) {
             if (const auto* var = dynamic_cast<const AstVariable*>(arg)) {
                 baseGroundedVariables.insert(var->getName());
             }
@@ -377,7 +377,7 @@ std::unique_ptr<AstClause> ResolveAliasesTransformer::removeComplexTermsInAtoms(
     // find all functors in atoms
     std::vector<const AstArgument*> terms;
     for (const AstAtom* atom : atoms) {
-        for (const AstArgument* arg : atom->getArguments()) {
+        for (const AstArgument* arg : atom->getConcreteArguments()) {
             // ignore if not a functor
             if (dynamic_cast<const AstFunctor*>(arg) == nullptr) {
                 continue;

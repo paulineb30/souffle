@@ -215,7 +215,7 @@ void collectContent(AstProgram& program, const AstComponent& component, const Ty
         std::unique_ptr<AstRelation> rel(cur->clone());
 
         // update attribute types
-        for (AstAttribute* attr : rel->getAttributes()) {
+        for (AstAttribute* attr : rel->getConcreteAttributes()) {
             AstQualifiedName forward = binding.find(attr->getTypeName());
             if (!forward.empty()) {
                 attr->setTypeName(forward);

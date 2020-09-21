@@ -54,7 +54,7 @@ bool RemoveRelationCopiesTransformer::removeRelationCopies(AstTranslationUnit& t
             std::vector<AstAtom*> bodyAtoms = getBodyLiterals<AstAtom>(*cl);
             if (!isFact(*cl) && cl->getBodyLiterals().size() == 1u && bodyAtoms.size() == 1u) {
                 AstAtom* atom = bodyAtoms[0];
-                if (equal_targets(cl->getHead()->getArguments(), atom->getArguments())) {
+                if (equal_targets(cl->getHead()->getConcreteArguments(), atom->getConcreteArguments())) {
                     // Requirements:
                     // 1) (checked) It is a rule with exactly one body.
                     // 3) (checked) The body consists of an atom.
@@ -66,7 +66,7 @@ bool RemoveRelationCopiesTransformer::removeRelationCopies(AstTranslationUnit& t
                     bool onlyDistinctHeadVars = true;
                     std::set<std::string> headVars;
 
-                    auto args = cl->getHead()->getArguments();
+                    auto args = cl->getHead()->getConcreteArguments();
                     while (onlyDistinctHeadVars && !args.empty()) {
                         const auto cur = args.back();
                         args.pop_back();

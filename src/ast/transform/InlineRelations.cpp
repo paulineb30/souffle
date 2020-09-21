@@ -104,12 +104,12 @@ void normaliseInlinedHeads(AstProgram& program) {
             }
 
             // Set up the head arguments in the new clause
-            for (AstArgument* arg : clause->getHead()->getArguments()) {
+            for (AstArgument* arg : clause->getHead()->getConcreteArguments()) {
                 if (auto* constant = dynamic_cast<AstConstant*>(arg)) {
                     // Found a constant in the head, so replace it with a variable
                     std::stringstream newVar;
                     newVar << "<new_var_" << newVarCount++ << ">";
-                    clauseHead->addArgument(std::make_unique<AstVariable>(newVar.str()));
+                    clauseHead->addConcreteArgument(std::make_unique<AstVariable>(newVar.str()));
 
                     auto* const c_num = dynamic_cast<const AstNumericConstant*>(constant);
                     assert((!c_num || c_num->getType()) && "numeric constant wasn't bound to a type");
@@ -122,7 +122,7 @@ void normaliseInlinedHeads(AstProgram& program) {
                             opEq, std::make_unique<AstVariable>(newVar.str()), souffle::clone(constant)));
                 } else {
                     // Already a variable
-                    clauseHead->addArgument(souffle::clone(arg));
+                    clauseHead->addConcreteArgument(souffle::clone(arg));
                 }
             }
 
@@ -272,8 +272,8 @@ bool reduceSubstitution(std::vector<std::pair<AstArgument*, AstArgument*>>& sub)
 NullableVector<std::pair<AstArgument*, AstArgument*>> unifyAtoms(AstAtom* first, AstAtom* second) {
     std::vector<std::pair<AstArgument*, AstArgument*>> substitution;
 
-    std::vector<AstArgument*> firstArgs = first->getArguments();
-    std::vector<AstArgument*> secondArgs = second->getArguments();
+    std::vector<AstArgument*> firstArgs = first->getConcreteArguments();
+    std::vector<AstArgument*> secondArgs = second->getConcreteArguments();
 
     // Create the initial unification equalities
     for (size_t i = 0; i < firstArgs.size(); i++) {
@@ -732,7 +732,7 @@ NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
     std::vector<AstAtom*> versions;
 
     // Try to inline each of the atom's arguments
-    std::vector<AstArgument*> arguments = atom.getArguments();
+    std::vector<AstArgument*> arguments = atom.getConcreteArguments();
     for (size_t i = 0; i < arguments.size(); i++) {
         AstArgument* arg = arguments[i];
 
@@ -744,7 +744,7 @@ NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
 
             // Create a new atom per new version of the argument
             for (AstArgument* newArgument : argumentVersions.getVector()) {
-                auto args = atom.getArguments();
+                auto args = atom.getConcreteArguments();
                 std::vector<std::unique_ptr<AstArgument>> newArgs;
                 for (size_t j = 0; j < args.size(); j++) {
                     if (j == i) {
@@ -753,7 +753,7 @@ NullableVector<AstAtom*> getInlinedAtom(AstProgram& program, AstAtom& atom) {
                         newArgs.emplace_back(args[j]->clone());
                     }
                 }
-                auto* newAtom = new AstAtom(atom.getQualifiedName(), std::move(newArgs), atom.getSrcLoc());
+                auto* newAtom = new AstAtom(atom.getQualifiedName(), std::move(newArgs), VecOwn<AstArgument>(), atom.getSrcLoc());
                 versions.push_back(newAtom);
             }
         }

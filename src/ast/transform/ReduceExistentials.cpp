@@ -46,7 +46,7 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
 
     // Checks whether an atom is of the form a(_,_,...,_)
     auto isExistentialAtom = [&](const AstAtom& atom) {
-        for (AstArgument* arg : atom.getArguments()) {
+        for (AstArgument* arg : atom.getConcreteArguments()) {
             if (dynamic_cast<AstUnnamedVariable*>(arg) == nullptr) {
                 return false;
             }
@@ -116,7 +116,7 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
     // All other relations are necessarily existential
     std::set<AstQualifiedName> existentialRelations;
     for (AstRelation* relation : program.getRelations()) {
-        if (!getClauses(program, *relation).empty() && relation->getArity() != 0 &&
+        if (!getClauses(program, *relation).empty() && relation->getConcreteArity() != 0 &&
                 irreducibleRelations.find(relation->getQualifiedName()) == irreducibleRelations.end()) {
             existentialRelations.insert(relation->getQualifiedName());
         }

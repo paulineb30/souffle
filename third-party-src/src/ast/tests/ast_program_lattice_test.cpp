@@ -46,7 +46,7 @@ inline std::unique_ptr<AstTranslationUnit> makeATU(std::string program) {
     return ParserDriver::parseTranslationUnit(program, e, d);
 }
 
-TEST(AstProgramLattice, Parse) {
+TEST(AstProgramLattice, ParseLattice) {
     std::unique_ptr<AstTranslationUnit> tu = makeATU(
             R"(
                    .type LatticeType1 <: unsigned 
@@ -75,6 +75,54 @@ TEST(AstProgramLattice, Parse) {
     EXPECT_TRUE(getLattice(*prog, "Lattice1"));
     EXPECT_TRUE(getLattice(*prog, "Lattice2"));
     EXPECT_FALSE(getLattice(*prog, "Lattice3"));
+
 }
+
+TEST(AstProgramLattice, ParseRelation) {
+    std::unique_ptr<AstTranslationUnit> tu = makeATU(
+            R"(
+                   .decl rel1(x: number, y: symbol)
+                   .decl rel2(x: number, y: symbol ; z1: L1, z2: L2)
+                   .decl rel3( ; z2: L2)
+
+                   rel3(; Z2) :- rel1(X, Y), rel2(X, Y; Z1, Z2).
+
+            )");
+    std::cout << tu->getErrorReport() << "\n";
+    auto* prog = tu->getProgram();
+    std::cout << *prog << "\n";
+
+    auto* rel1 = getRelation(*prog, "rel1");
+    EXPECT_EQ(rel1->getConcreteArity(), 2);
+    EXPECT_EQ(rel1->getLatticeArity(), 0);
+
+    auto* rel2 = getRelation(*prog, "rel2");
+    EXPECT_EQ(rel1->getConcreteArity(), 2);
+    EXPECT_EQ(rel2->getLatticeArity(), 2);
+
+    auto* rel3 = getRelation(*prog, "rel3");
+    EXPECT_EQ(rel3->getConcreteArity(), 0);
+    EXPECT_EQ(rel3->getLatticeArity(), 1);
+
+    const auto& clauses = getClauses(*prog, *rel3);
+    EXPECT_EQ(clauses.size(), 1);
+
+    const auto* clause = clauses[0];
+    const auto* head = clause->getHead();
+    EXPECT_EQ(head->getConcreteArity(), 0);
+    EXPECT_EQ(head->getLatticeArity(), 1);
+
+    const auto& bodyLiterals = clause->getBodyLiterals();
+    EXPECT_EQ(bodyLiterals.size(), 2);
+
+    const auto* literal1 = static_cast<AstAtom*>(bodyLiterals[0]);
+    EXPECT_EQ(literal1->getConcreteArity(), 2);
+    EXPECT_EQ(literal1->getLatticeArity(), 0);
+    
+    const auto* literal2 = static_cast<AstAtom*>(bodyLiterals[1]);
+    EXPECT_EQ(literal2->getConcreteArity(), 2);
+    EXPECT_EQ(literal2->getLatticeArity(), 2);
+}
+
 
 }  // end namespace souffle::test

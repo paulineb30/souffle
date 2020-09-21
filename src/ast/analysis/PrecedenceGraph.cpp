@@ -42,7 +42,7 @@ void PrecedenceGraphAnalysis::run(const AstTranslationUnit& translationUnit) {
             visitDepthFirst(c->getBodyLiterals(), [&](const AstAtom& atom) {
                 backingGraph.insert(relationDetail.getRelation(atom.getQualifiedName()), r);
             });
-            visitDepthFirst(c->getHead()->getArguments(), [&](const AstAtom& atom) {
+            visitDepthFirst(c->getHead()->getConcreteArguments(), [&](const AstAtom& atom) {
                 backingGraph.insert(relationDetail.getRelation(atom.getQualifiedName()), r);
             });
         }

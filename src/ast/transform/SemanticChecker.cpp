@@ -281,12 +281,12 @@ void AstSemanticCheckerImpl::checkAtom(const AstAtom& atom) {
         return;
     }
 
-    if (r->getArity() != atom.getArity()) {
+    if (r->getConcreteArity() != atom.getConcreteArity()) {
         report.addError(
                 "Mismatching arity of relation " + toString(atom.getQualifiedName()), atom.getSrcLoc());
     }
 
-    for (const AstArgument* arg : atom.getArguments()) {
+    for (const AstArgument* arg : atom.getConcreteArguments()) {
         checkArgument(*arg);
     }
 }
@@ -483,7 +483,7 @@ void AstSemanticCheckerImpl::checkFact(const AstClause& fact) {
     }
 
     // facts must only contain constants
-    for (auto* arg : head->getArguments()) {
+    for (auto* arg : head->getConcreteArguments()) {
         if (!isConstantArgument(arg)) {
             report.addError("Argument in fact is not constant", arg->getSrcLoc());
         }
@@ -592,10 +592,10 @@ void AstSemanticCheckerImpl::checkComplexRule(std::set<const AstClause*> multiRu
 }
 
 void AstSemanticCheckerImpl::checkRelationDeclaration(const AstRelation& relation) {
-    const auto& attributes = relation.getAttributes();
-    assert(attributes.size() == relation.getArity() && "mismatching attribute size and arity");
+    const auto& attributes = relation.getConcreteAttributes();
+    assert(attributes.size() == relation.getConcreteArity() && "mismatching attribute size and arity");
 
-    for (size_t i = 0; i < relation.getArity(); i++) {
+    for (size_t i = 0; i < relation.getConcreteArity(); i++) {
         AstAttribute* attr = attributes[i];
         auto&& typeName = attr->getTypeName();
         auto* existingType = getIf(program.getTypes(),
@@ -617,8 +617,8 @@ void AstSemanticCheckerImpl::checkRelationDeclaration(const AstRelation& relatio
 
 void AstSemanticCheckerImpl::checkRelation(const AstRelation& relation) {
     if (relation.getRepresentation() == RelationRepresentation::EQREL) {
-        if (relation.getArity() == 2) {
-            const auto& attributes = relation.getAttributes();
+        if (relation.getConcreteArity() == 2) {
+            const auto& attributes = relation.getConcreteAttributes();
             assert(attributes.size() == 2 && "mismatching attribute size and arity");
             if (attributes[0]->getTypeName() != attributes[1]->getTypeName()) {
                 report.addError("Domains of equivalence relation " + toString(relation.getQualifiedName()) +
@@ -890,13 +890,13 @@ static const std::vector<SrcLocation> usesInvalidWitness(AstTranslationUnit& tu,
     // Force the new aggregator variables to be grounded in the aggregatorless clause
     const std::set<std::string>& aggregatorVariables = update.getAggregatorVariables();
     for (const std::string& str : aggregatorVariables) {
-        groundingAtomAggregatorless->addArgument(std::make_unique<AstVariable>(str));
+        groundingAtomAggregatorless->addConcreteArgument(std::make_unique<AstVariable>(str));
     }
 
     // Force the given grounded arguments to be grounded in both clauses
     for (const std::unique_ptr<AstArgument>& arg : groundedArguments) {
-        groundingAtomAggregatorless->addArgument(souffle::clone(arg));
-        groundingAtomOriginal->addArgument(souffle::clone(arg));
+        groundingAtomAggregatorless->addConcreteArgument(souffle::clone(arg));
+        groundingAtomOriginal->addConcreteArgument(souffle::clone(arg));
     }
 
     aggregatorlessClause->addToBody(std::move(groundingAtomAggregatorless));
@@ -946,7 +946,7 @@ void AstSemanticCheckerImpl::checkWitnessProblem() {
         // Add in all head variables as new ungrounded body literals
         auto headVariables = std::make_unique<AstAtom>("*");
         visitDepthFirst(*clause.getHead(),
-                [&](const AstVariable& var) { headVariables->addArgument(souffle::clone(&var)); });
+                [&](const AstVariable& var) { headVariables->addConcreteArgument(souffle::clone(&var)); });
         auto headNegation = std::make_unique<AstNegation>(std::move(headVariables));
         bodyLiterals.push_back(headNegation.get());
 
@@ -1277,8 +1277,8 @@ void TypeChecker::visitAtom(const AstAtom& atom) {
         return;  // error unrelated to types.
     }
 
-    auto attributes = relation->getAttributes();
-    auto arguments = atom.getArguments();
+    auto attributes = relation->getConcreteAttributes();
+    auto arguments = atom.getConcreteArguments();
     if (attributes.size() != arguments.size()) {
         return;  // error in input program
     }

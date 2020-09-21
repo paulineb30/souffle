@@ -37,7 +37,7 @@ NormalisedClause::NormalisedClause(const AstClause* clause) {
     // head
     AstQualifiedName name("@min:head");
     std::vector<std::string> headVars;
-    for (const auto* arg : clause->getHead()->getArguments()) {
+    for (const auto* arg : clause->getHead()->getConcreteArguments()) {
         headVars.push_back(normaliseArgument(arg));
     }
     clauseElements.push_back({.name = name, .params = headVars});
@@ -55,7 +55,7 @@ void NormalisedClause::addClauseAtom(
 
     std::vector<std::string> vars;
     vars.push_back(scopeID);
-    for (const auto* arg : atom->getArguments()) {
+    for (const auto* arg : atom->getConcreteArguments()) {
         vars.push_back(normaliseArgument(arg));
     }
     clauseElements.push_back({.name = name, .params = vars});

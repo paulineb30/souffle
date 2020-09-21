@@ -175,7 +175,7 @@ bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
                 int n = pair.second;
                 // if it doesn't occur in this level, don't add it
                 if (n > 0) {
-                    head->addArgument(std::make_unique<AstVariable>(var));
+                    head->addConcreteArgument(std::make_unique<AstVariable>(var));
                 }
             }
 
@@ -198,7 +198,7 @@ bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
                                 auto res = new AstVariable(name);
 
                                 // extend head
-                                head->addArgument(souffle::clone(res));
+                                head->addConcreteArgument(souffle::clone(res));
 
                                 // return replacement
                                 return std::unique_ptr<AstNode>(res);
@@ -213,8 +213,8 @@ bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
             // add attributes
             std::map<const AstArgument*, TypeSet> argTypes =
                     TypeAnalysis::analyseTypes(translationUnit, *aggClause);
-            for (const auto& cur : head->getArguments()) {
-                rel->addAttribute(std::make_unique<AstAttribute>(toString(*cur),
+            for (const auto& cur : head->getConcreteArguments()) {
+                rel->addConcreteAttribute(std::make_unique<AstAttribute>(toString(*cur),
                         (isOfKind(argTypes[cur], TypeAttribute::Signed)) ? "number" : "symbol"));
             }
 
@@ -223,7 +223,7 @@ bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
 
             // add arguments to head of aggregate body atom (__agg_body_rel_n)
             std::vector<std::unique_ptr<AstArgument>> args;
-            for (auto arg : head->getArguments()) {
+            for (auto arg : head->getConcreteArguments()) {
                 if (auto* var = dynamic_cast<AstVariable*>(arg)) {
                     // replace local variable by underscore if local
                     if (varCtr[var->getName()] == 0) {
@@ -234,7 +234,7 @@ bool MaterializeAggregationQueriesTransformer::materializeAggregationQueries(
                 args.emplace_back(arg->clone());
             }
             auto aggAtom =
-                    std::make_unique<AstAtom>(head->getQualifiedName(), std::move(args), head->getSrcLoc());
+                    std::make_unique<AstAtom>(head->getQualifiedName(), std::move(args), VecOwn<AstArgument>(), head->getSrcLoc());
 
             std::vector<std::unique_ptr<AstLiteral>> newBody;
             newBody.push_back(std::move(aggAtom));

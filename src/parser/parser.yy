@@ -312,7 +312,8 @@
 %type <Mov<Own<AstArgument>>>                arg
 %type <Mov<VecOwn<AstArgument>>>             arg_list
 %type <Mov<Own<AstAtom>>>                    atom
-%type <Mov<VecOwn<AstAttribute>>>            attributes_list
+%type <Mov<VecOwn<AstAttribute>>>            attributes
+%type <Mov<std::vector<VecOwn<AstAttribute>>>> attributes_list
 %type <Mov<RuleBody>>                        body
 %type <Mov<Own<AstComponentType>>>           comp_type
 %type <Mov<Own<AstComponentInit>>>           comp_init
@@ -469,7 +470,12 @@ relation_decl
                 }
             }
 
-            rel->setAttributes(clone(attributes_list));
+            if (attributes_list.size() >= 1) {
+                rel->setConcreteAttributes(clone(attributes_list[0]));
+            }
+            if (attributes_list.size() == 2) {
+                rel->setLatticeAttributes(clone(attributes_list[1]));
+            }
         }
     }
   ;
@@ -489,8 +495,12 @@ record_type_list
 
 attributes_list
   : LPAREN RPAREN                       { }
-  | LPAREN non_empty_attributes RPAREN  { $$ = $2; }
+  | LPAREN non_empty_attributes RPAREN  { $$.push_back($2); }
+  | LPAREN attributes[concrete] SEMICOLON non_empty_attributes[lattice] RPAREN  { $$.push_back($concrete); $$.push_back($lattice); }
   ;
+
+attributes
+  : %empty { } | non_empty_attributes { $$ = $non_empty_attributes; };
 
 non_empty_attributes
   : attribute                            {           $$.push_back($attribute); }
@@ -612,7 +622,10 @@ term
   ;
 
 /* Rule body atom */
-atom : identifier LPAREN arg_list RPAREN { $$ = mk<AstAtom>($identifier, $arg_list, @$); };
+atom 
+  : identifier LPAREN arg_list RPAREN { $$ = mk<AstAtom>($identifier, $arg_list, VecOwn<AstArgument>(), @$); }
+  | identifier LPAREN arg_list[concrete] SEMICOLON non_empty_arg_list[lattice] RPAREN { $$ = mk<AstAtom>($identifier, $concrete, $lattice, @$); }
+  ;
 
 /* Rule literal constraints */
 constraint

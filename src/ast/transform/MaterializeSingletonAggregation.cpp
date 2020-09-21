@@ -98,8 +98,8 @@ bool MaterializeSingletonAggregationTransformer::transform(AstTranslationUnit& t
         auto variable = std::make_unique<AstVariable>(variableName);
 
         // __agg_rel_0(z) :- ...
-        aggHead->addArgument(souffle::clone(variable));
-        aggRel->addAttribute(std::make_unique<AstAttribute>(variableName, "number"));
+        aggHead->addConcreteArgument(souffle::clone(variable));
+        aggRel->addConcreteAttribute(std::make_unique<AstAttribute>(variableName, "number"));
         aggClause->setHead(souffle::clone(aggHead));
 
         //    A(x) :- x = sum .., B(x).

@@ -358,11 +358,11 @@ std::unique_ptr<RamCondition> AstToRamTranslator::translateConstraint(
         std::unique_ptr<RamCondition> visitProvenanceNegation(const AstProvenanceNegation& neg) override {
             const auto* atom = neg.getAtom();
             size_t auxiliaryArity = translator.getEvaluationArity(atom);
-            assert(auxiliaryArity <= atom->getArity() && "auxiliary arity out of bounds");
-            size_t arity = atom->getArity() - auxiliaryArity;
+            assert(auxiliaryArity <= atom->getConcreteArity() && "auxiliary arity out of bounds");
+            size_t arity = atom->getConcreteArity() - auxiliaryArity;
             std::vector<std::unique_ptr<RamExpression>> values;
 
-            auto args = atom->getArguments();
+            auto args = atom->getConcreteArguments();
             for (size_t i = 0; i < arity; i++) {
                 values.push_back(translator.translateValue(args[i], index));
             }
@@ -383,8 +383,8 @@ std::unique_ptr<RamCondition> AstToRamTranslator::translateConstraint(
         std::unique_ptr<RamCondition> visitNegation(const AstNegation& neg) override {
             const auto* atom = neg.getAtom();
             size_t auxiliaryArity = translator.getEvaluationArity(atom);
-            assert(auxiliaryArity <= atom->getArity() && "auxiliary arity out of bounds");
-            size_t arity = atom->getArity() - auxiliaryArity;
+            assert(auxiliaryArity <= atom->getConcreteArity() && "auxiliary arity out of bounds");
+            size_t arity = atom->getConcreteArity() - auxiliaryArity;
 
             if (arity == 0) {
                 // for a nullary, negation is a simple emptiness check
@@ -393,7 +393,7 @@ std::unique_ptr<RamCondition> AstToRamTranslator::translateConstraint(
 
             // else, we construct the atom and create a negation
             std::vector<std::unique_ptr<RamExpression>> values;
-            auto args = atom->getArguments();
+            auto args = atom->getConcreteArguments();
             for (size_t i = 0; i < arity; i++) {
                 values.push_back(translator.translateValue(args[i], index));
             }
@@ -451,7 +451,7 @@ AstToRamTranslator::ClauseTranslator::arg_list* AstToRamTranslator::ClauseTransl
         if (auto rec = dynamic_cast<const AstRecordInit*>(curNode)) {
             nodeArgs[curNode] = std::make_unique<arg_list>(rec->getArguments());
         } else if (auto atom = dynamic_cast<const AstAtom*>(curNode)) {
-            nodeArgs[curNode] = std::make_unique<arg_list>(atom->getArguments());
+            nodeArgs[curNode] = std::make_unique<arg_list>(atom->getConcreteArguments());
         } else {
             fatal("node type doesn't have arguments!");
         }
@@ -498,7 +498,7 @@ void AstToRamTranslator::ClauseTranslator::createValueIndex(const AstClause& cla
         std::map<const AstNode*, std::unique_ptr<arg_list>> nodeArgs;
 
         std::map<const arg_list*, int> arg_level;
-        nodeArgs[atom] = std::make_unique<arg_list>(atom->getArguments());
+        nodeArgs[atom] = std::make_unique<arg_list>(atom->getConcreteArguments());
         // the atom is obtained at the current level
         // increment nesting level for the atom
         arg_level[nodeArgs[atom].get()] = level++;
@@ -534,7 +534,7 @@ void AstToRamTranslator::ClauseTranslator::createValueIndex(const AstClause& cla
                 }
                 if (atom != nullptr) {
                     size_t pos = 0;
-                    for (auto* arg : atom->getArguments()) {
+                    for (auto* arg : atom->getConcreteArguments()) {
                         if (const auto* var = dynamic_cast<const AstVariable*>(arg)) {
                             valueIndex.addVarReference(
                                     *var, *aggLoc, (int)pos, translator.translateRelation(atom));
@@ -556,14 +556,14 @@ std::unique_ptr<RamOperation> AstToRamTranslator::ClauseTranslator::createOperat
     const auto head = clause.getHead();
 
     std::vector<std::unique_ptr<RamExpression>> values;
-    for (AstArgument* arg : head->getArguments()) {
+    for (AstArgument* arg : head->getConcreteArguments()) {
         values.push_back(translator.translateValue(arg, valueIndex));
     }
 
     std::unique_ptr<RamOperation> project =
             std::make_unique<RamProject>(translator.translateRelation(head), std::move(values));
 
-    if (head->getArity() == 0) {
+    if (head->getConcreteArity() == 0) {
         project = std::make_unique<RamFilter>(
                 std::make_unique<RamEmptinessCheck>(translator.translateRelation(head)), std::move(project));
     }
@@ -579,20 +579,20 @@ std::unique_ptr<RamOperation> AstToRamTranslator::ProvenanceClauseTranslator::cr
     // get all values in the body
     for (AstLiteral* lit : clause.getBodyLiterals()) {
         if (auto atom = dynamic_cast<AstAtom*>(lit)) {
-            for (AstArgument* arg : atom->getArguments()) {
+            for (AstArgument* arg : atom->getConcreteArguments()) {
                 values.push_back(translator.translateValue(arg, valueIndex));
             }
         } else if (auto neg = dynamic_cast<AstProvenanceNegation*>(lit)) {
             size_t auxiliaryArity = translator.getEvaluationArity(neg->getAtom());
-            for (size_t i = 0; i < neg->getAtom()->getArguments().size() - auxiliaryArity; ++i) {
-                auto arg = neg->getAtom()->getArguments()[i];
+            for (size_t i = 0; i < neg->getAtom()->getConcreteArguments().size() - auxiliaryArity; ++i) {
+                auto arg = neg->getAtom()->getConcreteArguments()[i];
                 values.push_back(translator.translateValue(arg, valueIndex));
             }
             for (size_t i = 0; i < auxiliaryArity; ++i) {
                 values.push_back(std::make_unique<RamSignedConstant>(-1));
             }
         } else if (auto neg = dynamic_cast<AstNegation*>(lit)) {
-            for (AstArgument* arg : neg->getAtom()->getArguments()) {
+            for (AstArgument* arg : neg->getAtom()->getConcreteArguments()) {
                 values.push_back(translator.translateValue(arg, valueIndex));
             }
         } else if (auto con = dynamic_cast<AstBinaryConstraint*>(lit)) {
@@ -610,7 +610,7 @@ std::unique_ptr<RamCondition> AstToRamTranslator::ClauseTranslator::createCondit
 
     // add stopping criteria for nullary relations
     // (if it contains already the null tuple, don't re-compute)
-    if (head->getArity() == 0) {
+    if (head->getConcreteArity() == 0) {
         return std::make_unique<RamEmptinessCheck>(translator.translateRelation(head));
     }
     return nullptr;
@@ -666,7 +666,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
     if (isFact(clause)) {
         // translate arguments
         std::vector<std::unique_ptr<RamExpression>> values;
-        for (auto& arg : head->getArguments()) {
+        for (auto& arg : head->getConcreteArguments()) {
             values.push_back(translator.translateValue(arg, ValueIndex()));
         }
 
@@ -715,7 +715,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
         if (const auto* atom = dynamic_cast<const AstAtom*>(cur)) {
             // add constraints
             size_t pos = 0;
-            for (auto arg : atom->getArguments()) {
+            for (auto arg : atom->getConcreteArguments()) {
                 if (auto* agg = dynamic_cast<AstAggregator*>(arg)) {
                     auto loc = valueIndex.getGeneratorLoc(*agg);
                     // FIXME: equiv' for float types (`FEQ`)
@@ -769,7 +769,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
                     addAggCondition(std::make_unique<RamConstraint>(BinaryConstraintOp::EQ,
                             std::make_unique<RamTupleElement>(level, pos), std::move(value)));
                 };
-                for (auto* arg : atom->getArguments()) {
+                for (auto* arg : atom->getConcreteArguments()) {
                     // variable bindings are issued differently since we don't want self
                     // referential variable bindings
                     if (auto* var = dynamic_cast<const AstVariable*>(arg)) {
@@ -831,11 +831,11 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
         if (const auto* atom = dynamic_cast<const AstAtom*>(cur)) {
             // add constraints
             // TODO: do we wish to enable constraints by header functor? record inits do so...
-            op = filterByConstraints(level, atom->getArguments(), std::move(op), false);
+            op = filterByConstraints(level, atom->getConcreteArguments(), std::move(op), false);
 
             // check whether all arguments are unnamed variables
             bool isAllArgsUnnamed = true;
-            for (auto* argument : atom->getArguments()) {
+            for (auto* argument : atom->getConcreteArguments()) {
                 if (dynamic_cast<AstUnnamedVariable*>(argument) == nullptr) {
                     isAllArgsUnnamed = false;
                 }
@@ -848,8 +848,8 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
                     std::move(op));
 
             // add a scan level
-            if (atom->getArity() != 0 && !isAllArgsUnnamed) {
-                if (head->getArity() == 0) {
+            if (atom->getConcreteArity() != 0 && !isAllArgsUnnamed) {
+                if (head->getConcreteArity() == 0) {
                     op = std::make_unique<RamBreak>(
                             std::make_unique<RamNegation>(
                                     std::make_unique<RamEmptinessCheck>(translator.translateRelation(head))),
@@ -1108,7 +1108,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::translateRecursiveRelation(
                 if (Global::config().has("provenance")) {
                     r1->addToBody(std::make_unique<AstProvenanceNegation>(souffle::clone(cl->getHead())));
                 } else {
-                    if (r1->getHead()->getArity() > 0) {
+                    if (r1->getHead()->getConcreteArity() > 0) {
                         r1->addToBody(std::make_unique<AstNegation>(souffle::clone(cl->getHead())));
                     }
                 }
@@ -1251,8 +1251,8 @@ std::unique_ptr<RamStatement> AstToRamTranslator::makeSubproofSubroutine(const A
     // add constraint for each argument in head of atom
     AstAtom* head = intermediateClause->getHead();
     size_t auxiliaryArity = auxArityAnalysis->getArity(head);
-    auto args = head->getArguments();
-    for (size_t i = 0; i < head->getArity() - auxiliaryArity; i++) {
+    auto args = head->getConcreteArguments();
+    for (size_t i = 0; i < head->getConcreteArity() - auxiliaryArity; i++) {
         auto arg = args[i];
 
         if (auto var = dynamic_cast<AstVariable*>(arg)) {
@@ -1271,14 +1271,14 @@ std::unique_ptr<RamStatement> AstToRamTranslator::makeSubproofSubroutine(const A
     }
 
     // index of level argument in argument list
-    size_t levelIndex = head->getArguments().size() - auxiliaryArity;
+    size_t levelIndex = head->getConcreteArguments().size() - auxiliaryArity;
 
     // add level constraints, i.e., that each body literal has height less than that of the head atom
     const auto& bodyLiterals = intermediateClause->getBodyLiterals();
     for (auto lit : bodyLiterals) {
         if (auto atom = dynamic_cast<AstAtom*>(lit)) {
-            auto arity = atom->getArity();
-            auto atomArgs = atom->getArguments();
+            auto arity = atom->getConcreteArity();
+            auto atomArgs = atom->getConcreteArguments();
             // arity - 1 is the level number in body atoms
             intermediateClause->addToBody(std::make_unique<AstBinaryConstraint>(BinaryConstraintOp::LT,
                     souffle::clone(atomArgs[arity - 1]),
@@ -1399,9 +1399,9 @@ std::unique_ptr<RamStatement> AstToRamTranslator::makeNegationSubproofSubroutine
             VariablesToArguments varsToArgs(uniqueVariables);
             atom->apply(varsToArgs);
 
-            auto atomArgs = atom->getArguments();
+            auto atomArgs = atom->getConcreteArguments();
             // add each value (subroutine argument) to the search query
-            for (size_t i = 0; i < atom->getArity() - auxiliaryArity; i++) {
+            for (size_t i = 0; i < atom->getConcreteArity() - auxiliaryArity; i++) {
                 auto arg = atomArgs[i];
                 query.push_back(translateValue(arg, ValueIndex()));
             }
@@ -1412,7 +1412,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::makeNegationSubproofSubroutine
             }
 
             // ensure the length of query tuple is correct
-            assert(query.size() == atom->getArity() && "wrong query tuple size");
+            assert(query.size() == atom->getConcreteArity() && "wrong query tuple size");
 
             // create existence checks to check if the tuple exists or not
             auto existenceCheck =
@@ -1447,9 +1447,9 @@ std::unique_ptr<RamStatement> AstToRamTranslator::makeNegationSubproofSubroutine
             VariablesToArguments varsToArgs(uniqueVariables);
             atom->apply(varsToArgs);
 
-            auto atomArgs = atom->getArguments();
+            auto atomArgs = atom->getConcreteArguments();
             // add each value (subroutine argument) to the search query
-            for (size_t i = 0; i < atom->getArity() - auxiliaryArity; i++) {
+            for (size_t i = 0; i < atom->getConcreteArity() - auxiliaryArity; i++) {
                 auto arg = atomArgs[i];
                 query.push_back(translateValue(arg, ValueIndex()));
             }
@@ -1460,7 +1460,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::makeNegationSubproofSubroutine
             }
 
             // ensure the length of query tuple is correct
-            assert(query.size() == atom->getArity() && "wrong query tuple size");
+            assert(query.size() == atom->getConcreteArity() && "wrong query tuple size");
 
             // create existence checks to check if the tuple exists or not
             auto existenceCheck =
@@ -1586,13 +1586,13 @@ void AstToRamTranslator::translateProgram(const AstTranslationUnit& translationU
         const auto& allInterns = sccGraph.getInternalRelations(scc);
         for (const auto& rel : allInterns) {
             std::string name = rel->getQualifiedName().toString();
-            auto arity = rel->getArity();
+            auto arity = rel->getConcreteArity();
             auto auxiliaryArity = auxArityAnalysis->getArity(rel);
             auto representation = rel->getRepresentation();
-            const auto& attributes = rel->getAttributes();
+            const auto& attributes = rel->getConcreteAttributes();
             std::vector<std::string> attributeNames;
             std::vector<std::string> attributeTypeQualifiers;
-            for (size_t i = 0; i < rel->getArity(); ++i) {
+            for (size_t i = 0; i < rel->getConcreteArity(); ++i) {
                 attributeNames.push_back(attributes[i]->getName());
                 if (typeEnv != nullptr) {
                     attributeTypeQualifiers.push_back(

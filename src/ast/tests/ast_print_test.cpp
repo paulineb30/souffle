@@ -51,7 +51,7 @@ inline std::unique_ptr<AstTranslationUnit> makePrintedATU(std::unique_ptr<AstTra
 
 inline std::unique_ptr<AstClause> makeClauseA(std::unique_ptr<AstArgument> headArgument) {
     auto headAtom = std::make_unique<AstAtom>("A");
-    headAtom->addArgument(std::move(headArgument));
+    headAtom->addConcreteArgument(std::move(headArgument));
     auto clause = std::make_unique<AstClause>();
     clause->setHead(std::move(headAtom));
     return clause;
@@ -117,7 +117,7 @@ TEST(AstPrint, Counter) {
 
 TEST(AstPrint, AggregatorMin) {
     auto atom = std::make_unique<AstAtom>("B");
-    atom->addArgument(std::make_unique<AstVariable>("x"));
+    atom->addConcreteArgument(std::make_unique<AstVariable>("x"));
     auto min = std::make_unique<AstAggregator>(AggregateOp::MIN, std::make_unique<AstVariable>("x"));
 
     std::vector<std::unique_ptr<AstLiteral>> body;
@@ -134,7 +134,7 @@ TEST(AstPrint, AggregatorMin) {
 
 TEST(AstPrint, AggregatorMax) {
     auto atom = std::make_unique<AstAtom>("B");
-    atom->addArgument(std::make_unique<AstVariable>("x"));
+    atom->addConcreteArgument(std::make_unique<AstVariable>("x"));
     auto max = std::make_unique<AstAggregator>(AggregateOp::MAX, std::make_unique<AstVariable>("x"));
 
     std::vector<std::unique_ptr<AstLiteral>> body;
@@ -150,7 +150,7 @@ TEST(AstPrint, AggregatorMax) {
 
 TEST(AstPrint, AggregatorCount) {
     auto atom = std::make_unique<AstAtom>("B");
-    atom->addArgument(std::make_unique<AstVariable>("x"));
+    atom->addConcreteArgument(std::make_unique<AstVariable>("x"));
     auto count = std::make_unique<AstAggregator>(AggregateOp::COUNT);
 
     std::vector<std::unique_ptr<AstLiteral>> body;
@@ -166,7 +166,7 @@ TEST(AstPrint, AggregatorCount) {
 
 TEST(AstPrint, AggregatorSum) {
     auto atom = std::make_unique<AstAtom>("B");
-    atom->addArgument(std::make_unique<AstVariable>("x"));
+    atom->addConcreteArgument(std::make_unique<AstVariable>("x"));
     auto sum = std::make_unique<AstAggregator>(AggregateOp::SUM, std::make_unique<AstVariable>("x"));
 
     std::vector<std::unique_ptr<AstLiteral>> body;

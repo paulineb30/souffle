@@ -55,14 +55,14 @@ TEST(AstUtils, Grounded) {
 
     // r(X,Y,Z)
     auto* head = new AstAtom("r");
-    head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("X")));
-    head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("Y")));
-    head->addArgument(std::unique_ptr<AstArgument>(new AstVariable("Z")));
+    head->addConcreteArgument(std::unique_ptr<AstArgument>(new AstVariable("X")));
+    head->addConcreteArgument(std::unique_ptr<AstArgument>(new AstVariable("Y")));
+    head->addConcreteArgument(std::unique_ptr<AstArgument>(new AstVariable("Z")));
     clause->setHead(std::unique_ptr<AstAtom>(head));
 
     // a(X)
     auto* a = new AstAtom("a");
-    a->addArgument(std::unique_ptr<AstArgument>(new AstVariable("X")));
+    a->addConcreteArgument(std::unique_ptr<AstArgument>(new AstVariable("X")));
     clause->addToBody(std::unique_ptr<AstLiteral>(a));
 
     // X = Y
@@ -73,7 +73,7 @@ TEST(AstUtils, Grounded) {
 
     // !b(Z)
     auto* b = new AstAtom("b");
-    b->addArgument(std::unique_ptr<AstArgument>(new AstVariable("Z")));
+    b->addConcreteArgument(std::unique_ptr<AstArgument>(new AstVariable("Z")));
     auto* neg = new AstNegation(std::unique_ptr<AstAtom>(b));
     clause->addToBody(std::unique_ptr<AstLiteral>(neg));
 
@@ -89,7 +89,7 @@ TEST(AstUtils, Grounded) {
     // obtain groundness
     auto isGrounded = getGroundedTerms(tu, *tu.getProgram()->getClauses()[0]);
 
-    auto args = head->getArguments();
+    auto args = head->getConcreteArguments();
     // check selected sub-terms
     EXPECT_TRUE(isGrounded[args[0]]);   // X
     EXPECT_TRUE(isGrounded[args[1]]);   // Y
@@ -129,8 +129,8 @@ TEST(AstUtils, GroundedRecords) {
     EXPECT_TRUE(r);
 
     // check selected sub-terms
-    EXPECT_TRUE(isGrounded[s->getArguments()[0]]);
-    EXPECT_TRUE(isGrounded[r->getArguments()[0]]);
+    EXPECT_TRUE(isGrounded[s->getConcreteArguments()[0]]);
+    EXPECT_TRUE(isGrounded[r->getConcreteArguments()[0]]);
 }
 
 TEST(AstUtils, ReorderClauseAtoms) {

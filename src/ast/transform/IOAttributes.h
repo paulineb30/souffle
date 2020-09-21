@@ -70,12 +70,12 @@ private:
             // Prepare type system information.
             std::vector<std::string> attributesParams;
 
-            for (const auto* attribute : rel->getAttributes()) {
+            for (const auto* attribute : rel->getConcreteAttributes()) {
                 attributesParams.push_back(attribute->getName());
             }
 
             // Casting due to json11.h type requirements.
-            long long arity{static_cast<long long>(rel->getArity() - auxArityAnalysis->getArity(rel))};
+            long long arity{static_cast<long long>(rel->getConcreteArity() - auxArityAnalysis->getArity(rel))};
             long long auxArity{static_cast<long long>(auxArityAnalysis->getArity(rel))};
 
             json11::Json relJson = json11::Json::object{{"arity", arity}, {"auxArity", auxArity},
@@ -107,7 +107,7 @@ private:
             }
 
             std::vector<std::string> attributeNames;
-            for (const auto* attribute : rel->getAttributes()) {
+            for (const auto* attribute : rel->getConcreteAttributes()) {
                 attributeNames.push_back(attribute->getName());
             }
 
@@ -135,14 +135,14 @@ private:
             // Prepare type system information.
             std::vector<std::string> attributesTypes;
 
-            for (const auto* attribute : rel->getAttributes()) {
+            for (const auto* attribute : rel->getConcreteAttributes()) {
                 auto typeName = attribute->getTypeName();
                 auto type = getTypeQualifier(typeEnv->getType(typeName));
                 attributesTypes.push_back(type);
             }
 
             // Casting due to json11.h type requirements.
-            long long arity{static_cast<long long>(rel->getArity() - auxArityAnalysis->getArity(rel))};
+            long long arity{static_cast<long long>(rel->getConcreteArity() - auxArityAnalysis->getArity(rel))};
             long long auxArity{static_cast<long long>(auxArityAnalysis->getArity(rel))};
 
             json11::Json relJson = json11::Json::object{{"arity", arity}, {"auxArity", auxArity},

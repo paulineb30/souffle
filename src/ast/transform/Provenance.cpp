@@ -87,8 +87,8 @@ std::unique_ptr<AstRelation> makeInfoRelation(
     infoClauseHead->setQualifiedName(name);
 
     // (darth_tytus): Can this be unsigned?
-    infoRelation->addAttribute(std::make_unique<AstAttribute>("clause_num", AstQualifiedName("number")));
-    infoClauseHead->addArgument(std::make_unique<AstNumericConstant>(originalClauseNum));
+    infoRelation->addConcreteAttribute(std::make_unique<AstAttribute>("clause_num", AstQualifiedName("number")));
+    infoClauseHead->addConcreteArgument(std::make_unique<AstNumericConstant>(originalClauseNum));
 
     // add head relation as meta info
     std::vector<std::string> headVariables;
@@ -118,7 +118,7 @@ std::unique_ptr<AstRelation> makeInfoRelation(
     };
 
     // add head arguments
-    for (auto& arg : originalClause.getHead()->getArguments()) {
+    for (auto& arg : originalClause.getHead()->getConcreteArguments()) {
         headVariables.push_back(getArgInfo(arg));
     }
 
@@ -127,9 +127,9 @@ std::unique_ptr<AstRelation> makeInfoRelation(
     headVariableString << join(headVariables, ",");
 
     // add an attribute to infoRelation for the head of clause
-    infoRelation->addAttribute(
+    infoRelation->addConcreteAttribute(
             std::make_unique<AstAttribute>(std::string("head_vars"), AstQualifiedName("symbol")));
-    infoClauseHead->addArgument(std::make_unique<AstStringConstant>(toString(join(headVariables, ","))));
+    infoClauseHead->addConcreteArgument(std::make_unique<AstStringConstant>(toString(join(headVariables, ","))));
 
     // visit all body literals and add to info clause head
     for (size_t i = 0; i < originalClause.getBodyLiterals().size(); i++) {
@@ -146,7 +146,7 @@ std::unique_ptr<AstRelation> makeInfoRelation(
 
         // add an attribute for atoms and binary constraints
         if (atom != nullptr || dynamic_cast<AstBinaryConstraint*>(lit) != nullptr) {
-            infoRelation->addAttribute(std::make_unique<AstAttribute>(
+            infoRelation->addConcreteAttribute(std::make_unique<AstAttribute>(
                     std::string("rel_") + std::to_string(i), AstQualifiedName("symbol")));
         }
 
@@ -157,14 +157,14 @@ std::unique_ptr<AstRelation> makeInfoRelation(
             if (dynamic_cast<AstAtom*>(lit) != nullptr) {
                 std::string atomDescription = relName;
 
-                for (auto& arg : atom->getArguments()) {
+                for (auto& arg : atom->getConcreteArguments()) {
                     atomDescription.append("," + getArgInfo(arg));
                 }
 
-                infoClauseHead->addArgument(std::make_unique<AstStringConstant>(atomDescription));
+                infoClauseHead->addConcreteArgument(std::make_unique<AstStringConstant>(atomDescription));
                 // for a negation, add a marker with the relation name
             } else if (dynamic_cast<AstNegation*>(lit) != nullptr) {
-                infoClauseHead->addArgument(std::make_unique<AstStringConstant>("!" + relName));
+                infoClauseHead->addConcreteArgument(std::make_unique<AstStringConstant>("!" + relName));
             }
         }
     }
@@ -180,12 +180,12 @@ std::unique_ptr<AstRelation> makeInfoRelation(
             constraintDescription.append("," + getArgInfo(con->getLHS()));
             constraintDescription.append("," + getArgInfo(con->getRHS()));
 
-            infoClauseHead->addArgument(std::make_unique<AstStringConstant>(constraintDescription));
+            infoClauseHead->addConcreteArgument(std::make_unique<AstStringConstant>(constraintDescription));
         }
     }
 
-    infoRelation->addAttribute(std::make_unique<AstAttribute>("clause_repr", AstQualifiedName("symbol")));
-    infoClauseHead->addArgument(std::make_unique<AstStringConstant>(toString(originalClause)));
+    infoRelation->addConcreteAttribute(std::make_unique<AstAttribute>("clause_repr", AstQualifiedName("symbol")));
+    infoClauseHead->addConcreteArgument(std::make_unique<AstStringConstant>(toString(originalClause)));
 
     // set clause head and add clause to info relation
     infoClause->setHead(std::unique_ptr<AstAtom>(infoClauseHead));
@@ -198,7 +198,7 @@ std::unique_ptr<AstRelation> makeInfoRelation(
 void transformEqrelRelation(AstProgram& program, AstRelation& rel) {
     assert(rel.getRepresentation() == RelationRepresentation::EQREL &&
             "attempting to transform non-eqrel relation");
-    assert(rel.getArity() == 2 && "eqrel relation not binary");
+    assert(rel.getConcreteArity() == 2 && "eqrel relation not binary");
 
     rel.setRepresentation(RelationRepresentation::BTREE);
 
@@ -206,16 +206,16 @@ void transformEqrelRelation(AstProgram& program, AstRelation& rel) {
     // transitive clause: A(x, z) :- A(x, y), A(y, z).
     auto transitiveClause = new AstClause();
     auto transitiveClauseHead = new AstAtom(rel.getQualifiedName());
-    transitiveClauseHead->addArgument(std::make_unique<AstVariable>("x"));
-    transitiveClauseHead->addArgument(std::make_unique<AstVariable>("z"));
+    transitiveClauseHead->addConcreteArgument(std::make_unique<AstVariable>("x"));
+    transitiveClauseHead->addConcreteArgument(std::make_unique<AstVariable>("z"));
 
     auto transitiveClauseBody = new AstAtom(rel.getQualifiedName());
-    transitiveClauseBody->addArgument(std::make_unique<AstVariable>("x"));
-    transitiveClauseBody->addArgument(std::make_unique<AstVariable>("y"));
+    transitiveClauseBody->addConcreteArgument(std::make_unique<AstVariable>("x"));
+    transitiveClauseBody->addConcreteArgument(std::make_unique<AstVariable>("y"));
 
     auto transitiveClauseBody2 = new AstAtom(rel.getQualifiedName());
-    transitiveClauseBody2->addArgument(std::make_unique<AstVariable>("y"));
-    transitiveClauseBody2->addArgument(std::make_unique<AstVariable>("z"));
+    transitiveClauseBody2->addConcreteArgument(std::make_unique<AstVariable>("y"));
+    transitiveClauseBody2->addConcreteArgument(std::make_unique<AstVariable>("z"));
 
     transitiveClause->setHead(std::unique_ptr<AstAtom>(transitiveClauseHead));
     transitiveClause->addToBody(std::unique_ptr<AstLiteral>(transitiveClauseBody));
@@ -226,12 +226,12 @@ void transformEqrelRelation(AstProgram& program, AstRelation& rel) {
     // symmetric clause: A(x, y) :- A(y, x).
     auto symClause = new AstClause();
     auto symClauseHead = new AstAtom(rel.getQualifiedName());
-    symClauseHead->addArgument(std::make_unique<AstVariable>("x"));
-    symClauseHead->addArgument(std::make_unique<AstVariable>("y"));
+    symClauseHead->addConcreteArgument(std::make_unique<AstVariable>("x"));
+    symClauseHead->addConcreteArgument(std::make_unique<AstVariable>("y"));
 
     auto symClauseBody = new AstAtom(rel.getQualifiedName());
-    symClauseBody->addArgument(std::make_unique<AstVariable>("y"));
-    symClauseBody->addArgument(std::make_unique<AstVariable>("x"));
+    symClauseBody->addConcreteArgument(std::make_unique<AstVariable>("y"));
+    symClauseBody->addConcreteArgument(std::make_unique<AstVariable>("x"));
 
     symClause->setHead(std::unique_ptr<AstAtom>(symClauseHead));
     symClause->addToBody(std::unique_ptr<AstLiteral>(symClauseBody));
@@ -241,12 +241,12 @@ void transformEqrelRelation(AstProgram& program, AstRelation& rel) {
     // reflexive clause: A(x, x) :- A(x, _).
     auto reflexiveClause = new AstClause();
     auto reflexiveClauseHead = new AstAtom(rel.getQualifiedName());
-    reflexiveClauseHead->addArgument(std::make_unique<AstVariable>("x"));
-    reflexiveClauseHead->addArgument(std::make_unique<AstVariable>("x"));
+    reflexiveClauseHead->addConcreteArgument(std::make_unique<AstVariable>("x"));
+    reflexiveClauseHead->addConcreteArgument(std::make_unique<AstVariable>("x"));
 
     auto reflexiveClauseBody = new AstAtom(rel.getQualifiedName());
-    reflexiveClauseBody->addArgument(std::make_unique<AstVariable>("x"));
-    reflexiveClauseBody->addArgument(std::make_unique<AstUnnamedVariable>());
+    reflexiveClauseBody->addConcreteArgument(std::make_unique<AstVariable>("x"));
+    reflexiveClauseBody->addConcreteArgument(std::make_unique<AstUnnamedVariable>());
 
     reflexiveClause->setHead(std::unique_ptr<AstAtom>(reflexiveClauseHead));
     reflexiveClause->addToBody(std::unique_ptr<AstLiteral>(reflexiveClauseBody));
@@ -288,9 +288,9 @@ bool ProvenanceTransformer::transformMaxHeight(AstTranslationUnit& translationUn
             }
         }
 
-        relation->addAttribute(
+        relation->addConcreteAttribute(
                 std::make_unique<AstAttribute>(std::string("@rule_number"), AstQualifiedName("number")));
-        relation->addAttribute(
+        relation->addConcreteAttribute(
                 std::make_unique<AstAttribute>(std::string("@level_number"), AstQualifiedName("number")));
 
         for (auto clause : getClauses(*program, *relation)) {
@@ -303,12 +303,12 @@ bool ProvenanceTransformer::transformMaxHeight(AstTranslationUnit& translationUn
                 std::unique_ptr<AstNode> operator()(std::unique_ptr<AstNode> node) const override {
                     // add provenance columns
                     if (auto atom = dynamic_cast<AstAtom*>(node.get())) {
-                        atom->addArgument(std::make_unique<AstUnnamedVariable>());
-                        atom->addArgument(std::make_unique<AstUnnamedVariable>());
+                        atom->addConcreteArgument(std::make_unique<AstUnnamedVariable>());
+                        atom->addConcreteArgument(std::make_unique<AstUnnamedVariable>());
                     } else if (auto neg = dynamic_cast<AstNegation*>(node.get())) {
                         auto atom = neg->getAtom();
-                        atom->addArgument(std::make_unique<AstUnnamedVariable>());
-                        atom->addArgument(std::make_unique<AstUnnamedVariable>());
+                        atom->addConcreteArgument(std::make_unique<AstUnnamedVariable>());
+                        atom->addConcreteArgument(std::make_unique<AstUnnamedVariable>());
                     }
 
                     // otherwise - apply mapper recursively
@@ -322,8 +322,8 @@ bool ProvenanceTransformer::transformMaxHeight(AstTranslationUnit& translationUn
 
             // if fact, level number is 0
             if (isFact(*clause)) {
-                clause->getHead()->addArgument(std::make_unique<AstNumericConstant>(0));
-                clause->getHead()->addArgument(std::make_unique<AstNumericConstant>(0));
+                clause->getHead()->addConcreteArgument(std::make_unique<AstNumericConstant>(0));
+                clause->getHead()->addConcreteArgument(std::make_unique<AstNumericConstant>(0));
             } else {
                 std::vector<AstArgument*> bodyLevels;
 
@@ -335,15 +335,15 @@ bool ProvenanceTransformer::transformMaxHeight(AstTranslationUnit& translationUn
 
                     // add two provenance columns to lit; first is rule num, second is level num
                     if (auto atom = dynamic_cast<AstAtom*>(lit)) {
-                        atom->addArgument(std::make_unique<AstUnnamedVariable>());
-                        atom->addArgument(std::make_unique<AstVariable>("@level_num_" + std::to_string(i)));
+                        atom->addConcreteArgument(std::make_unique<AstUnnamedVariable>());
+                        atom->addConcreteArgument(std::make_unique<AstVariable>("@level_num_" + std::to_string(i)));
                         bodyLevels.push_back(new AstVariable("@level_num_" + std::to_string(i)));
                     }
                 }
 
                 // add two provenance columns to head lit
-                clause->getHead()->addArgument(std::make_unique<AstNumericConstant>(clauseNum));
-                clause->getHead()->addArgument(getNextLevelNumber(bodyLevels));
+                clause->getHead()->addConcreteArgument(std::make_unique<AstNumericConstant>(clauseNum));
+                clause->getHead()->addConcreteArgument(getNextLevelNumber(bodyLevels));
             }
         }
     }
