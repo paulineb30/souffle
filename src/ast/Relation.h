@@ -18,6 +18,7 @@
 
 #include "RelationTag.h"
 #include "ast/Attribute.h"
+#include "ast/LatticeAttribute.h"
 #include "ast/Node.h"
 #include "ast/QualifiedName.h"
 #include "ast/utility/NodeMapper.h"
@@ -79,7 +80,7 @@ public:
     }
 
     /** Add a new lattice type to this relation */
-    void addLatticeAttribute(Own<AstAttribute> attr) {
+    void addLatticeAttribute(Own<AstLatticeAttribute> attr) {
         assert(attr && "Undefined attribute");
         latticeAttributes.push_back(std::move(attr));
     }
@@ -90,12 +91,12 @@ public:
     }
 
     /** Set lattice relation attributes */
-    void setLatticeAttributes(VecOwn<AstAttribute> attrs) {
+    void setLatticeAttributes(VecOwn<AstLatticeAttribute> attrs) {
         latticeAttributes = std::move(attrs);
     }
 
     /** Get lattice relation attributes */
-    std::vector<AstAttribute*> getLatticeAttributes() const {
+    std::vector<AstLatticeAttribute*> getLatticeAttributes() const {
         return toPtrVector(latticeAttributes);
     }
 
@@ -181,7 +182,7 @@ protected:
     VecOwn<AstAttribute> concreteAttributes;
 
     /** Lattice attributes of the relation */
-    VecOwn<AstAttribute> latticeAttributes;
+    VecOwn<AstLatticeAttribute> latticeAttributes;
 
     /** Qualifiers of relation */
     std::set<RelationQualifier> qualifiers;

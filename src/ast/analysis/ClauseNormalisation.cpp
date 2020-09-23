@@ -36,11 +36,15 @@ namespace souffle {
 NormalisedClause::NormalisedClause(const AstClause* clause) {
     // head
     AstQualifiedName name("@min:head");
-    std::vector<std::string> headVars;
+    std::vector<std::string> concreteHeadVars;
     for (const auto* arg : clause->getHead()->getConcreteArguments()) {
-        headVars.push_back(normaliseArgument(arg));
+        concreteHeadVars.push_back(normaliseArgument(arg));
     }
-    clauseElements.push_back({.name = name, .params = headVars});
+    std::vector<std::string> latticeHeadVars;
+    for (const auto* arg : clause->getHead()->getLatticeArguments()) {
+        latticeHeadVars.push_back(normaliseArgument(arg));
+    }
+    clauseElements.push_back({.name = name, .concreteParams = concreteHeadVars, .latticeParams = latticeHeadVars});
 
     // body
     for (const auto* lit : clause->getBodyLiterals()) {
@@ -53,12 +57,17 @@ void NormalisedClause::addClauseAtom(
     AstQualifiedName name(atom->getQualifiedName());
     name.prepend(qualifier);
 
-    std::vector<std::string> vars;
-    vars.push_back(scopeID);
+    std::vector<std::string> concreteVars;
+    concreteVars.push_back(scopeID);
     for (const auto* arg : atom->getConcreteArguments()) {
-        vars.push_back(normaliseArgument(arg));
+        concreteVars.push_back(normaliseArgument(arg));
     }
-    clauseElements.push_back({.name = name, .params = vars});
+    std::vector<std::string> latticeVars;
+    latticeVars.push_back(scopeID);
+    for (const auto* arg : atom->getLatticeArguments()) {
+        latticeVars.push_back(normaliseArgument(arg));
+    }
+    clauseElements.push_back({.name = name, .concreteParams = concreteVars, .latticeParams = latticeVars});
 }
 
 void NormalisedClause::addClauseBodyLiteral(const std::string& scopeID, const AstLiteral* lit) {
@@ -73,7 +82,7 @@ void NormalisedClause::addClauseBodyLiteral(const std::string& scopeID, const As
         vars.push_back(scopeID);
         vars.push_back(normaliseArgument(bc->getLHS()));
         vars.push_back(normaliseArgument(bc->getRHS()));
-        clauseElements.push_back({.name = name, .params = vars});
+        clauseElements.push_back({.name = name, .concreteParams = vars, .latticeParams = std::vector<std::string>()});
     } else {
         assert(lit != nullptr && "unexpected nullptr lit");
         fullyNormalised = false;
@@ -81,7 +90,7 @@ void NormalisedClause::addClauseBodyLiteral(const std::string& scopeID, const As
         qualifier << "@min:unhandled:lit:" << scopeID;
         AstQualifiedName name(toString(*lit));
         name.prepend(qualifier.str());
-        clauseElements.push_back({.name = name, .params = std::vector<std::string>()});
+        clauseElements.push_back({.name = name, .concreteParams = std::vector<std::string>(), .latticeParams = std::vector<std::string>()});
     }
 }
 
@@ -133,7 +142,7 @@ std::string NormalisedClause::normaliseArgument(const AstArgument* arg) {
         }
 
         // Type signature is its own special atom
-        clauseElements.push_back({.name = aggrTypeSignature.str(), .params = aggrTypeSignatureComponents});
+        clauseElements.push_back({.name = aggrTypeSignature.str(), .concreteParams = aggrTypeSignatureComponents, .latticeParams = std::vector<std::string>()});
 
         // Add each contained normalised clause literal, tying it with the new scope ID
         for (const auto* literal : aggr->getBodyLiterals()) {
@@ -164,7 +173,7 @@ void ClauseNormalisationAnalysis::print(std::ostream& os) const {
             if (i != 0) {
                 os << ", ";
             }
-            os << els[i].name << ":" << els[i].params;
+            os << els[i].name << ":" << els[i].concreteParams << " " << els[i].latticeParams;
         }
         os << "}" << std::endl;
     }

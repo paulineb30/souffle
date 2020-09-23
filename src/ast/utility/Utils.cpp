@@ -139,6 +139,10 @@ std::set<const AstRelation*> getBodyRelations(const AstClause* clause, const Ast
         visitDepthFirst(
                 *arg, [&](const AstAtom& atom) { bodyRelations.insert(getAtomRelation(&atom, program)); });
     }
+    for (const auto& arg : clause->getHead()->getLatticeArguments()) {
+        visitDepthFirst(
+                *arg, [&](const AstAtom& atom) { bodyRelations.insert(getAtomRelation(&atom, program)); });
+    }
     return bodyRelations;
 }
 

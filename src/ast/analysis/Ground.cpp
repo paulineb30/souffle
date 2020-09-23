@@ -165,8 +165,13 @@ struct GroundednessAnalysis : public AstConstraintAnalysis<BoolDisjunctVar> {
             return;
         }
 
-        // all arguments are grounded
+        // all concrete arguments are grounded
         for (const auto& arg : cur.getConcreteArguments()) {
+            addConstraint(isTrue(getVar(arg)));
+        }
+
+        // all lattice arguments are grounded
+        for (const auto& arg : cur.getLatticeArguments()) {
             addConstraint(isTrue(getVar(arg)));
         }
     }

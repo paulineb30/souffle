@@ -125,6 +125,7 @@ souffle_sources = \
         ast/Directive.h                                    \
         ast/IntrinsicFunctor.h                             \
         ast/Lattice.h                                      \
+        ast/LatticeAttribute.h                             \
         ast/Literal.h                                      \
         ast/Negation.h                                     \
         ast/NilConstant.h                                  \

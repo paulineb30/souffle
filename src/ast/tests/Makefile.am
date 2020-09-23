@@ -45,10 +45,20 @@ check_PROGRAMS += ast_transformers_test
 ast_transformers_test_SOURCES = ast_transformers_test.cpp
 ast_transformers_test_LDADD = $(top_builddir)/src/libsouffle.la
 
+# ast transformers lattice test
+check_PROGRAMS += ast_transformers_lattice_test
+ast_transformers_lattice_test_SOURCES = ast_transformers_lattice_test.cpp
+ast_transformers_lattice_test_LDADD = $(top_builddir)/src/libsouffle.la
+
 # ast utils test
 check_PROGRAMS += ast_utils_test
 ast_utils_test_SOURCES = ast_utils_test.cpp
 ast_utils_test_LDADD = $(top_builddir)/src/libsouffle.la
+
+# ast utils lattice test
+check_PROGRAMS += ast_utils_lattice_test
+ast_utils_lattice_test_SOURCES = ast_utils_lattice_test.cpp
+ast_utils_lattice_test_LDADD = $(top_builddir)/src/libsouffle.la
 
 # ast parser utils test
 check_PROGRAMS += ast_parser_utils_test

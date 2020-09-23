@@ -32,6 +32,7 @@
 #include "ast/Counter.h"
 #include "ast/IntrinsicFunctor.h"
 #include "ast/Lattice.h"
+#include "ast/LatticeAttribute.h"
 #include "ast/Literal.h"
 #include "ast/Negation.h"
 #include "ast/NilConstant.h"
@@ -135,6 +136,7 @@ struct AstVisitor : public ast_visitor_tag {
         FORWARD(Attribute);
         FORWARD(Clause);
         FORWARD(Lattice);
+        FORWARD(LatticeAttribute);
         FORWARD(Relation);
         FORWARD(Program);
         FORWARD(Pragma);
@@ -204,6 +206,7 @@ protected:
     LINK(Attribute, Node);
     LINK(Clause, Node);
     LINK(Lattice, Node);
+    LINK(LatticeAttribute, Node);
     LINK(Relation, Node);
     LINK(Pragma, Node);
 

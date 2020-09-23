@@ -54,7 +54,7 @@ bool RemoveRelationCopiesTransformer::removeRelationCopies(AstTranslationUnit& t
             std::vector<AstAtom*> bodyAtoms = getBodyLiterals<AstAtom>(*cl);
             if (!isFact(*cl) && cl->getBodyLiterals().size() == 1u && bodyAtoms.size() == 1u) {
                 AstAtom* atom = bodyAtoms[0];
-                if (equal_targets(cl->getHead()->getConcreteArguments(), atom->getConcreteArguments())) {
+                if (equal_targets(cl->getHead()->getConcreteArguments(), atom->getConcreteArguments()) && equal_targets(cl->getHead()->getLatticeArguments(), atom->getLatticeArguments())) {
                     // Requirements:
                     // 1) (checked) It is a rule with exactly one body.
                     // 3) (checked) The body consists of an atom.
@@ -66,18 +66,29 @@ bool RemoveRelationCopiesTransformer::removeRelationCopies(AstTranslationUnit& t
                     bool onlyDistinctHeadVars = true;
                     std::set<std::string> headVars;
 
-                    auto args = cl->getHead()->getConcreteArguments();
-                    while (onlyDistinctHeadVars && !args.empty()) {
-                        const auto cur = args.back();
-                        args.pop_back();
+                    auto concreteArgs = cl->getHead()->getConcreteArguments();
+                    while (onlyDistinctHeadVars && !concreteArgs.empty()) {
+                        const auto cur = concreteArgs.back();
+                        concreteArgs.pop_back();
 
                         if (auto var = dynamic_cast<const AstVariable*>(cur)) {
                             onlyDistinctHeadVars &= headVars.insert(var->getName()).second;
                         } else if (auto init = dynamic_cast<const AstRecordInit*>(cur)) {
                             // records are decomposed and their arguments are checked
                             for (auto rec_arg : init->getArguments()) {
-                                args.push_back(rec_arg);
+                                concreteArgs.push_back(rec_arg);
                             }
+                        } else {
+                            onlyDistinctHeadVars = false;
+                        }
+                    }
+                    auto latticeArgs = cl->getHead()->getLatticeArguments();
+                    while (onlyDistinctHeadVars && !latticeArgs.empty()) {
+                        const auto cur = latticeArgs.back();
+                        latticeArgs.pop_back();
+
+                        if (auto var = dynamic_cast<const AstVariable*>(cur)) {
+                            onlyDistinctHeadVars &= headVars.insert(var->getName()).second;
                         } else {
                             onlyDistinctHeadVars = false;
                         }

@@ -115,7 +115,7 @@ protected:
     void print(std::ostream& os) const override {
         os << getQualifiedName() << "(" << join(concreteArguments);
         if (!latticeArguments.empty()) {
-            os << "; " << join(latticeArguments);
+            os << ";" << join(latticeArguments);
         }
         os << ")";
     }

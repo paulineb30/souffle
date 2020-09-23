@@ -55,6 +55,7 @@
     #include "ast/Directive.h"
     #include "ast/IntrinsicFunctor.h"
     #include "ast/Lattice.h"
+    #include "ast/LatticeAttribute.h"
     #include "ast/Literal.h"
     #include "ast/NilConstant.h"
     #include "ast/NumericConstant.h"
@@ -305,6 +306,7 @@
 %token L_OR                      "lor"
 %token L_XOR                     "lxor"
 %token L_NOT                     "lnot"
+%token IN                        "<-"
 
 /* -- Non-Terminal Types -- */
 %type <Mov<RuleBody>>                        aggregate_body
@@ -312,8 +314,8 @@
 %type <Mov<Own<AstArgument>>>                arg
 %type <Mov<VecOwn<AstArgument>>>             arg_list
 %type <Mov<Own<AstAtom>>>                    atom
-%type <Mov<VecOwn<AstAttribute>>>            attributes
-%type <Mov<std::vector<VecOwn<AstAttribute>>>> attributes_list
+%type <Mov<Own<AstAttribute>>>               concrete_attribute
+%type <Mov<VecOwn<AstAttribute>>>            concrete_attributes
 %type <Mov<RuleBody>>                        body
 %type <Mov<Own<AstComponentType>>>           comp_type
 %type <Mov<Own<AstComponentInit>>>           comp_init
@@ -332,19 +334,21 @@
 %type <Mov<Own<AstFunctorDeclaration>>>      functor_decl
 %type <Mov<VecOwn<AstAtom>>>                 head
 %type <Mov<AstQualifiedName>>                identifier
-%type <Mov<VecOwn<AstDirective>>>                   directive_list
-%type <Mov<VecOwn<AstDirective>>>                   directive_head
-%type <AstDirectiveType>                            directive_head_decl
-%type <Mov<VecOwn<AstDirective>>>                   relation_directive_list
+%type <Mov<VecOwn<AstDirective>>>            directive_list
+%type <Mov<VecOwn<AstDirective>>>            directive_head
+%type <AstDirectiveType>                     directive_head_decl
+%type <Mov<VecOwn<AstDirective>>>            relation_directive_list
 %type <Mov<std::string>>                     kvp_value
+%type <Mov<Own<AstLatticeAttribute>>>        lattice_attribute
+%type <Mov<VecOwn<AstLatticeAttribute>>>     lattice_attributes
 %type <Mov<Own<AstLattice>>>                 lattice_decl 
 %type <Mov<VecOwn<AstArgument>>>             non_empty_arg_list
-%type <Mov<Own<AstAttribute>>>               attribute
-%type <Mov<VecOwn<AstAttribute>>>            non_empty_attributes
+%type <Mov<VecOwn<AstAttribute>>>            non_empty_concrete_attributes_list
 %type <Mov<AstExecutionOrder::ExecOrder>>    non_empty_exec_order_list
 %type <Mov<std::vector<TypeAttribute>>>      non_empty_functor_arg_type_list
 %type <Mov<std::vector<std::pair
             <std::string, std::string>>>>    non_empty_key_value_pairs
+%type <Mov<VecOwn<AstLatticeAttribute>>>     non_empty_lattice_attributes_list
 %type <Mov<VecOwn<AstRelation>>>             non_empty_relation_list
 %type <Mov<Own<AstPragma>>>                  pragma
 %type <TypeAttribute>                        predefined_type
@@ -444,7 +448,7 @@ sum_branch_list
 sum_branch
   : IDENT[name] LBRACE RBRACE
     { $$ = mk<AstBranchDeclaration>($name, VecOwn<AstAttribute>{}, @$); }
-  | IDENT[name] LBRACE non_empty_attributes[attributes] RBRACE
+  | IDENT[name] LBRACE non_empty_concrete_attributes_list[attributes] RBRACE
     { $$ = mk<AstBranchDeclaration>($name, $attributes, @$); }
   ;
 
@@ -454,9 +458,10 @@ sum_branch
 
 /* Relation declaration */
 relation_decl
-  : DECL non_empty_relation_list attributes_list relation_tags {
+  : DECL non_empty_relation_list concrete_attributes lattice_attributes relation_tags {
         auto tags             = $relation_tags;
-        auto attributes_list  = $attributes_list;
+        auto concrete_attributes  = $concrete_attributes;
+        auto lattice_attributes  = $lattice_attributes;
 
         $$ = $non_empty_relation_list;
         for (auto&& rel : $$) {
@@ -470,12 +475,8 @@ relation_decl
                 }
             }
 
-            if (attributes_list.size() >= 1) {
-                rel->setConcreteAttributes(clone(attributes_list[0]));
-            }
-            if (attributes_list.size() == 2) {
-                rel->setLatticeAttributes(clone(attributes_list[1]));
-            }
+            rel->setConcreteAttributes(clone(concrete_attributes));
+            rel->setLatticeAttributes(clone(lattice_attributes));
         }
     }
   ;
@@ -490,25 +491,35 @@ non_empty_relation_list
 /* specific wrapper to ensure the err msg says "expected ',' or ')'" */
 record_type_list
   : LBRACKET RBRACKET                       { }
-  | LBRACKET non_empty_attributes RBRACKET  { $$ = $2; }
+  | LBRACKET non_empty_concrete_attributes_list RBRACKET  { $$ = $2; }
   ;
 
-attributes_list
-  : LPAREN RPAREN                       { }
-  | LPAREN non_empty_attributes RPAREN  { $$.push_back($2); }
-  | LPAREN attributes[concrete] SEMICOLON non_empty_attributes[lattice] RPAREN  { $$.push_back($concrete); $$.push_back($lattice); }
+concrete_attributes
+  : LPAREN                      { }
+  | LPAREN non_empty_concrete_attributes_list { $$ = $non_empty_concrete_attributes_list; }
   ;
 
-attributes
-  : %empty { } | non_empty_attributes { $$ = $non_empty_attributes; };
-
-non_empty_attributes
-  : attribute                            {           $$.push_back($attribute); }
-  | non_empty_attributes COMMA attribute { $$ = $1;  $$.push_back($attribute); }
+non_empty_concrete_attributes_list
+  : concrete_attribute                                          {           $$.push_back($concrete_attribute); }
+  | non_empty_concrete_attributes_list COMMA concrete_attribute { $$ = $1;  $$.push_back($concrete_attribute); }
   ;
 
-attribute
+concrete_attribute
   : IDENT[name] COLON identifier[type] { $$ = mk<AstAttribute>($name, $type, @type); }
+  ;
+
+lattice_attributes
+  : RPAREN                                             { }
+  | SEMICOLON non_empty_lattice_attributes_list RPAREN { $$ = $non_empty_lattice_attributes_list; }
+  ;
+
+non_empty_lattice_attributes_list
+  : lattice_attribute                                         {           $$.push_back($lattice_attribute); }
+  | non_empty_lattice_attributes_list COMMA lattice_attribute { $$ = $1;  $$.push_back($lattice_attribute); }
+  ;
+
+lattice_attribute
+  : IDENT[name] IN identifier[lattice] { $$ = mk<AstLatticeAttribute>($name, $lattice, @lattice); }
   ;
 
 /* Relation tags */

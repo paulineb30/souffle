@@ -783,16 +783,30 @@ private:
             return;  // error in input program
         }
 
-        auto atts = rel->getConcreteAttributes();
-        auto args = atom.getConcreteArguments();
-        if (atts.size() != args.size()) {
+        auto concreteAtts = rel->getConcreteAttributes();
+        auto concreteArgs = atom.getConcreteArguments();
+        if (concreteAtts.size() != concreteArgs.size()) {
             return;  // error in input program
         }
 
-        for (size_t i = 0; i < atts.size(); i++) {
-            const auto& typeName = atts[i]->getTypeName();
+        for (size_t i = 0; i < concreteAtts.size(); i++) {
+            const auto& typeName = concreteAtts[i]->getTypeName();
             if (typeEnv.isType(typeName)) {
-                map(*args[i], typeEnv.getType(typeName));
+                map(*concreteArgs[i], typeEnv.getType(typeName));
+            }
+        }
+
+        auto latticeAtts = rel->getLatticeAttributes();
+        auto latticeArgs = atom.getLatticeArguments();
+        if (latticeAtts.size() != latticeArgs.size()) {
+            return;  // error in input program
+        }
+
+        for (size_t i = 0; i < latticeAtts.size(); i++) {
+            const auto& latticeName = latticeAtts[i]->getLatticeName();
+            const auto& baseType = getLattice(program, latticeName)->getBase();
+            if (typeEnv.isType(baseType)) {
+                map(*latticeArgs[i], typeEnv.getType(baseType));
             }
         }
     }

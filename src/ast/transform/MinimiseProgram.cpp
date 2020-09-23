@@ -172,16 +172,31 @@ bool MinimiseProgramTransformer::isValidPermutation(const NormalisedClause& left
     // Pass through the all arguments in the first clause in sequence, mapping each to the corresponding
     // argument in the second clause under the literal permutation
     for (size_t i = 0; i < size; i++) {
-        const auto& leftArgs = leftElements[i].params;
-        const auto& rightArgs = rightElements[permutation[i]].params;
-        for (size_t j = 0; j < leftArgs.size(); j++) {
-            auto leftArg = leftArgs[j];
-            auto rightArg = rightArgs[j];
-            std::string currentMap = variableMap[leftArg];
+        const auto& leftConcreteArgs = leftElements[i].concreteParams;
+        const auto& rightConcreteArgs = rightElements[permutation[i]].concreteParams;
+        for (size_t j = 0; j < leftConcreteArgs.size(); j++) {
+            auto leftConcreteArg = leftConcreteArgs[j];
+            auto rightConcreteArg = rightConcreteArgs[j];
+            std::string currentMap = variableMap[leftConcreteArg];
             if (currentMap.empty()) {
                 // unassigned yet, so assign it appropriately
-                variableMap[leftArg] = rightArg;
-            } else if (currentMap != rightArg) {
+                variableMap[leftConcreteArg] = rightConcreteArg;
+            } else if (currentMap != rightConcreteArg) {
+                // inconsistent mapping!
+                // clauses cannot be equivalent under this permutation
+                return false;
+            }
+        }
+        const auto& leftLatticeArgs = leftElements[i].latticeParams;
+        const auto& rightLatticeArgs = rightElements[permutation[i]].latticeParams;
+        for (size_t j = 0; j < leftLatticeArgs.size(); j++) {
+            auto leftLatticeArg = leftLatticeArgs[j];
+            auto rightLatticeArg = rightLatticeArgs[j];
+            std::string currentMap = variableMap[leftLatticeArg];
+            if (currentMap.empty()) {
+                // unassigned yet, so assign it appropriately
+                variableMap[leftLatticeArg] = rightLatticeArg;
+            } else if (currentMap != rightLatticeArg) {
                 // inconsistent mapping!
                 // clauses cannot be equivalent under this permutation
                 return false;
@@ -210,8 +225,13 @@ bool MinimiseProgramTransformer::areBijectivelyEquivalent(
         return false;
     }
 
-    // head atoms must have the same arity (names do not matter)
-    if (leftElements[0].params.size() != rightElements[0].params.size()) {
+    // head atoms must have the same concrete arity (names do not matter)
+    if (leftElements[0].concreteParams.size() != rightElements[0].concreteParams.size()) {
+        return false;
+    }
+
+    // head atoms must have the same lattice arity (names do not matter)
+    if (leftElements[0].latticeParams.size() != rightElements[0].latticeParams.size()) {
         return false;
     }
 

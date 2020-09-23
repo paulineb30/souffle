@@ -230,6 +230,11 @@ std::unique_ptr<AstClause> ResolveAliasesTransformer::resolveAliases(const AstCl
                 baseGroundedVariables.insert(var->getName());
             }
         }
+        for (const AstArgument* arg : atom->getLatticeArguments()) {
+            if (const auto* var = dynamic_cast<const AstVariable*>(arg)) {
+                baseGroundedVariables.insert(var->getName());
+            }
+        }
         visitDepthFirst(*atom, [&](const AstRecordInit& rec) {
             for (const AstArgument* arg : rec.getArguments()) {
                 if (const auto* var = dynamic_cast<const AstVariable*>(arg)) {
@@ -378,6 +383,17 @@ std::unique_ptr<AstClause> ResolveAliasesTransformer::removeComplexTermsInAtoms(
     std::vector<const AstArgument*> terms;
     for (const AstAtom* atom : atoms) {
         for (const AstArgument* arg : atom->getConcreteArguments()) {
+            // ignore if not a functor
+            if (dynamic_cast<const AstFunctor*>(arg) == nullptr) {
+                continue;
+            }
+
+            // add this functor if not seen yet
+            if (!any_of(terms, [&](const AstArgument* cur) { return *cur == *arg; })) {
+                terms.push_back(arg);
+            }
+        }
+        for (const AstArgument* arg : atom->getLatticeArguments()) {
             // ignore if not a functor
             if (dynamic_cast<const AstFunctor*>(arg) == nullptr) {
                 continue;

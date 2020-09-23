@@ -1606,8 +1606,10 @@ void AstToRamTranslator::translateProgram(const AstTranslationUnit& translationU
             for (size_t i = 0; i < rel->getLatticeArity(); ++i) {
                 latticeAttributeNames.push_back(latticeAttributes[i]->getName());
                 if (typeEnv != nullptr) {
+                    auto latticeName = latticeAttributes[i]->getLatticeName();
+                    auto base = getLattice(*program, latticeName)->getBase();
                     latticeAttributeTypeQualifiers.push_back(
-                            getTypeQualifier(typeEnv->getType(latticeAttributes[i]->getTypeName())));
+                            getTypeQualifier(typeEnv->getType(base)));
                 }
             }
             ramRels[name] = std::make_unique<RamRelation>(

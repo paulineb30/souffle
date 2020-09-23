@@ -36,7 +36,8 @@ class NormalisedClause {
 public:
     struct NormalisedClauseElement {
         AstQualifiedName name;
-        std::vector<std::string> params;
+        std::vector<std::string> concreteParams;
+        std::vector<std::string> latticeParams;
     };
 
     NormalisedClause() = default;

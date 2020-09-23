@@ -49,22 +49,8 @@ inline std::unique_ptr<AstTranslationUnit> makeATU(std::string program) {
 TEST(AstProgramLattice, ParseLattice) {
     std::unique_ptr<AstTranslationUnit> tu = makeATU(
             R"(
-                   .type LatticeType1 <: unsigned 
-                   .functor leq1(unsigned, unsigned): unsigned
-                   .functor lub1(unsigned, unsigned): unsigned
-                   .functor glb1(unsigned, unsigned): unsigned
-                   .functor bot1(unsigned): number
-                   .functor top1(unsigned): number
-
-                   .type LatticeType2 <: unsigned 
-                   .functor leq2(unsigned, unsigned): unsigned
-                   .functor lub2(unsigned, unsigned): unsigned
-                   .functor glb2(unsigned, unsigned): unsigned
-                   .functor bot2(unsigned): number
-                   .functor top2(unsigned): number
-
-                   .lattice Lattice1 <LatticeType1, leq1, lub1, glb1, bot1, top1>
-                   .lattice Lattice2 <LatticeType2, leq2, lub2, glb2, bot2, top2>
+                   .lattice Lattice1 <latticeType1, leq1, lub1, glb1, bot1, top1>
+                   .lattice Lattice2 <latticeType2, leq2, lub2, glb2, bot2, top2>
             )");
 
     auto* prog = tu->getProgram();
@@ -82,8 +68,8 @@ TEST(AstProgramLattice, ParseRelation) {
     std::unique_ptr<AstTranslationUnit> tu = makeATU(
             R"(
                    .decl rel1(x: number, y: symbol)
-                   .decl rel2(x: number, y: symbol ; z1: L1, z2: L2)
-                   .decl rel3( ; z2: L2)
+                   .decl rel2(x: number, y: symbol ; z1 <- L1, z2 <- L2)
+                   .decl rel3( ; z2 <- L2)
 
                    rel3(; Z2) :- rel1(X, Y), rel2(X, Y; Z1, Z2).
 
