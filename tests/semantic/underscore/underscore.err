@@ -1,7 +1,7 @@
 Error: Underscore in binary relation in file underscore.dl at line 8
 F(x,y) :- F(x,y),  x > _.
 -----------------------^--
-Error: Argument in fact is not constant in file underscore.dl at line 10
+Error: Concrete argument in fact is not constant in file underscore.dl at line 10
 F("string",_).
 -----------^---
 Error: Underscore in head of rule in file underscore.dl at line 10

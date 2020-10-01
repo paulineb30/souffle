@@ -51,6 +51,11 @@ bool ReduceExistentialsTransformer::transform(AstTranslationUnit& translationUni
                 return false;
             }
         }
+        for (AstArgument* arg : atom.getLatticeArguments()) {
+            if (dynamic_cast<AstUnnamedVariable*>(arg) == nullptr) {
+                return false;
+            }
+        }
         return true;
     };
 

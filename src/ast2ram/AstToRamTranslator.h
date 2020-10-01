@@ -103,28 +103,24 @@ private:
     struct Location {
         int identifier{};
         int element{};
-        std::unique_ptr<RamRelationReference> relation{nullptr};
+        bool isLatticeElement{};
 
         Location() = default;
 
-        Location(int ident, int elem, std::unique_ptr<RamRelationReference> rel = nullptr)
-                : identifier(ident), element(elem), relation(std::move(rel)) {}
+        Location(int ident, int elem, bool isLatticeElement)
+                : identifier(ident), element(elem), isLatticeElement(isLatticeElement) {}
 
-        Location(const Location& l) : identifier(l.identifier), element(l.element) {
-            if (l.relation != nullptr) {
-                relation = souffle::clone(l.relation);
-            }
-        }
+        Location(const Location& l) : identifier(l.identifier), element(l.element), isLatticeElement(l.isLatticeElement) {}
 
         Location& operator=(Location other) {
             identifier = other.identifier;
             element = other.element;
-            relation = std::move(other.relation);
+            isLatticeElement = other.isLatticeElement;
             return *this;
         }
 
         bool operator==(const Location& loc) const {
-            return identifier == loc.identifier && element == loc.element;
+            return identifier == loc.identifier && element == loc.element && isLatticeElement == loc.isLatticeElement;
         }
 
         bool operator!=(const Location& loc) const {
@@ -132,11 +128,16 @@ private:
         }
 
         bool operator<(const Location& loc) const {
-            return identifier < loc.identifier || (identifier == loc.identifier && element < loc.element);
+            return identifier < loc.identifier || (identifier == loc.identifier && element < loc.element) || (identifier == loc.identifier && element == loc.element && isLatticeElement < loc.isLatticeElement);
         }
 
         void print(std::ostream& out) const {
-            out << "(" << identifier << "," << element << ")";
+            if (isLatticeElement) {
+                out << "l";
+            } else {
+                out << "t";
+            }
+            out << identifier << "." << element;
         }
 
         friend std::ostream& operator<<(std::ostream& out, const Location& loc) {
@@ -188,9 +189,8 @@ private:
             locs.insert(l);
         }
 
-        void addVarReference(const AstVariable& var, int ident, int pos,
-                std::unique_ptr<RamRelationReference> rel = nullptr) {
-            addVarReference(var, Location({ident, pos, std::move(rel)}));
+        void addVarReference(const AstVariable& var, int ident, int pos, bool isLatticeElement) {
+            addVarReference(var, Location({ident, pos, isLatticeElement}));
         }
 
         bool isDefined(const AstVariable& var) const {
@@ -200,7 +200,11 @@ private:
         const Location& getDefinitionPoint(const AstVariable& var) const {
             auto pos = var_references.find(var.getName());
             assert(pos != var_references.end() && "Undefined variable referenced!");
-            return *pos->second.begin();
+            if ((*pos->second.begin()).isLatticeElement) {
+                return *pos->second.rbegin();
+            } else {
+                return *pos->second.begin();
+            }
         }
 
         const variable_reference_map& getVariableReferences() const {
@@ -215,9 +219,8 @@ private:
             record_definitions[&init] = l;
         }
 
-        void setRecordDefinition(const AstRecordInit& init, int ident, int pos,
-                std::unique_ptr<RamRelationReference> rel = nullptr) {
-            setRecordDefinition(init, Location({ident, pos, std::move(rel)}));
+        void setRecordDefinition(const AstRecordInit& init, int ident, int pos) {
+            setRecordDefinition(init, Location({ident, pos, false}));
         }
 
         const Location& getDefinitionPoint(const AstRecordInit& init) const {
@@ -233,6 +236,10 @@ private:
 
         void setGeneratorLoc(const AstArgument& agg, const Location& loc) {
             arg_generator_locations.push_back(std::make_pair(&agg, loc));
+        }
+
+        void setGeneratorLoc(const AstArgument& agg, int ident, int pos) {
+            setGeneratorLoc(agg, Location({ident, pos, false}));
         }
 
         const Location& getGeneratorLoc(const AstArgument& arg) const {
@@ -343,12 +350,8 @@ private:
 
         std::unique_ptr<AstClause> getReorderedClause(const AstClause& clause, const int version) const;
 
-        arg_list* getArgList(
-                const AstNode* curNode, std::map<const AstNode*, std::unique_ptr<arg_list>>& nodeArgs) const;
-
-        void indexValues(const AstNode* curNode,
-                std::map<const AstNode*, std::unique_ptr<arg_list>>& nodeArgs,
-                std::map<const arg_list*, int>& arg_level, RamRelationReference* relation);
+        void indexRecord(const AstRecordInit* rec);
+        void indexAtom(const AstAtom* atom);
 
         void createValueIndex(const AstClause& clause);
 

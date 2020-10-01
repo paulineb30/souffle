@@ -283,10 +283,19 @@ void AstSemanticCheckerImpl::checkAtom(const AstAtom& atom) {
 
     if (r->getConcreteArity() != atom.getConcreteArity()) {
         report.addError(
-                "Mismatching arity of relation " + toString(atom.getQualifiedName()), atom.getSrcLoc());
+                "Mismatching concrete arity of relation " + toString(atom.getQualifiedName()), atom.getSrcLoc());
+    }
+
+    if (r->getLatticeArity() != atom.getLatticeArity()) {
+        report.addError(
+                "Mismatching lattice arity of relation " + toString(atom.getQualifiedName()), atom.getSrcLoc());
     }
 
     for (const AstArgument* arg : atom.getConcreteArguments()) {
+        checkArgument(*arg);
+    }
+
+    for (const AstArgument* arg : atom.getLatticeArguments()) {
         checkArgument(*arg);
     }
 }
@@ -485,7 +494,12 @@ void AstSemanticCheckerImpl::checkFact(const AstClause& fact) {
     // facts must only contain constants
     for (auto* arg : head->getConcreteArguments()) {
         if (!isConstantArgument(arg)) {
-            report.addError("Argument in fact is not constant", arg->getSrcLoc());
+            report.addError("Concrete argument in fact is not constant", arg->getSrcLoc());
+        }
+    }
+    for (auto* arg : head->getLatticeArguments()) {
+        if (!isConstantArgument(arg)) {
+            report.addError("Lattice argument in fact is not constant", arg->getSrcLoc());
         }
     }
 }
@@ -592,11 +606,11 @@ void AstSemanticCheckerImpl::checkComplexRule(std::set<const AstClause*> multiRu
 }
 
 void AstSemanticCheckerImpl::checkRelationDeclaration(const AstRelation& relation) {
-    const auto& attributes = relation.getConcreteAttributes();
-    assert(attributes.size() == relation.getConcreteArity() && "mismatching attribute size and arity");
+    const auto& concreteAttributes = relation.getConcreteAttributes();
+    assert(concreteAttributes.size() == relation.getConcreteArity() && "mismatching concrete attribute size and arity");
 
     for (size_t i = 0; i < relation.getConcreteArity(); i++) {
-        AstAttribute* attr = attributes[i];
+        AstAttribute* attr = concreteAttributes[i];
         auto&& typeName = attr->getTypeName();
         auto* existingType = getIf(program.getTypes(),
                 [&](const AstType* type) { return type->getQualifiedName() == typeName; });
@@ -608,7 +622,29 @@ void AstSemanticCheckerImpl::checkRelationDeclaration(const AstRelation& relatio
 
         /* check whether name occurs more than once */
         for (size_t j = 0; j < i; j++) {
-            if (attr->getName() == attributes[j]->getName()) {
+            if (attr->getName() == concreteAttributes[j]->getName()) {
+                report.addError(tfm::format("Doubly defined attribute name %s", *attr), attr->getSrcLoc());
+            }
+        }
+    }
+
+    const auto& latticeAttributes = relation.getLatticeAttributes();
+    assert(latticeAttributes.size() == relation.getLatticeArity() && "mismatching lattice attribute size and arity");
+
+    for (size_t i = 0; i < relation.getLatticeArity(); i++) {
+        AstLatticeAttribute* attr = latticeAttributes[i];
+        auto&& typeName = getLattice(program, attr->getLatticeName())->getBase();
+        auto* existingType = getIf(program.getTypes(),
+                [&](const AstType* type) { return type->getQualifiedName() == typeName; });
+
+        /* check whether type exists */
+        if (!typeEnv.isPrimitiveType(typeName) && nullptr == existingType) {
+            report.addError(tfm::format("Undefined type in attribute %s", *attr), attr->getSrcLoc());
+        }
+
+        /* check whether name occurs more than once */
+        for (size_t j = 0; j < i; j++) {
+            if (attr->getName() == latticeAttributes[j]->getName()) {
                 report.addError(tfm::format("Doubly defined attribute name %s", *attr), attr->getSrcLoc());
             }
         }
@@ -618,9 +654,11 @@ void AstSemanticCheckerImpl::checkRelationDeclaration(const AstRelation& relatio
 void AstSemanticCheckerImpl::checkRelation(const AstRelation& relation) {
     if (relation.getRepresentation() == RelationRepresentation::EQREL) {
         if (relation.getConcreteArity() == 2) {
-            const auto& attributes = relation.getConcreteAttributes();
-            assert(attributes.size() == 2 && "mismatching attribute size and arity");
-            if (attributes[0]->getTypeName() != attributes[1]->getTypeName()) {
+            const auto& concreteAttributes = relation.getConcreteAttributes();
+            const auto& latticeAttributes = relation.getLatticeAttributes();
+            assert(concreteAttributes.size() == 2 && "mismatching attribute size and arity");
+            assert(latticeAttributes.size() == 0 && "eqrel has lattice attributes");
+            if (concreteAttributes[0]->getTypeName() != concreteAttributes[1]->getTypeName()) {
                 report.addError("Domains of equivalence relation " + toString(relation.getQualifiedName()) +
                                         " are different",
                         relation.getSrcLoc());
@@ -1277,16 +1315,16 @@ void TypeChecker::visitAtom(const AstAtom& atom) {
         return;  // error unrelated to types.
     }
 
-    auto attributes = relation->getConcreteAttributes();
-    auto arguments = atom.getConcreteArguments();
-    if (attributes.size() != arguments.size()) {
+    auto concreteAttributes = relation->getConcreteAttributes();
+    auto concreteArguments = atom.getConcreteArguments();
+    if (concreteAttributes.size() != concreteArguments.size()) {
         return;  // error in input program
     }
 
-    for (size_t i = 0; i < attributes.size(); ++i) {
-        auto& typeName = attributes[i]->getTypeName();
+    for (size_t i = 0; i < concreteAttributes.size(); ++i) {
+        auto& typeName = concreteAttributes[i]->getTypeName();
         if (typeEnv.isType(typeName)) {
-            auto argTypes = typeAnalysis.getTypes(arguments[i]);
+            auto argTypes = typeAnalysis.getTypes(concreteArguments[i]);
             auto& attributeType = typeEnv.getType(typeName);
 
             if (argTypes.isAll() || argTypes.empty()) {
@@ -1304,11 +1342,50 @@ void TypeChecker::visitAtom(const AstAtom& atom) {
             if (!validAttribute && !Global::config().has("legacy")) {
                 auto primaryDiagnostic =
                         DiagnosticMessage("Atom's argument type is not a subtype of its declared type",
-                                arguments[i]->getSrcLoc());
+                                concreteArguments[i]->getSrcLoc());
 
                 auto declaredTypeInfo =
                         DiagnosticMessage(tfm::format("The argument's declared type is %s", typeName),
-                                attributes[i]->getSrcLoc());
+                                concreteAttributes[i]->getSrcLoc());
+
+                report.addDiagnostic(Diagnostic(Diagnostic::Type::ERROR, std::move(primaryDiagnostic),
+                        {std::move(declaredTypeInfo)}));
+            }
+        }
+    }
+
+    auto latticeAttributes = relation->getLatticeAttributes();
+    auto latticeArguments = atom.getLatticeArguments();
+    if (latticeAttributes.size() != latticeArguments.size()) {
+        return;  // error in input program
+    }
+
+    for (size_t i = 0; i < latticeAttributes.size(); ++i) {
+        auto& typeName = getLattice(program, latticeAttributes[i]->getLatticeName())->getBase();
+        if (typeEnv.isType(typeName)) {
+            auto argTypes = typeAnalysis.getTypes(latticeArguments[i]);
+            auto& attributeType = typeEnv.getType(typeName);
+
+            if (argTypes.isAll() || argTypes.empty()) {
+                continue;  // This will be reported later.
+            }
+
+            // Attribute and argument type agree if, argument type is a subtype of declared type
+            // or is of the appropriate constant type or the (constant) record type.
+            bool validAttribute = all_of(argTypes, [&attributeType](const Type& type) {
+                if (isSubtypeOf(type, attributeType)) return true;
+                if (!isSubtypeOf(attributeType, type)) return false;
+                if (isA<ConstantType>(type)) return true;
+                return isA<RecordType>(type) && !isA<SubsetType>(type);
+            });
+            if (!validAttribute && !Global::config().has("legacy")) {
+                auto primaryDiagnostic =
+                        DiagnosticMessage("Atom's argument type is not a subtype of its declared type",
+                                latticeArguments[i]->getSrcLoc());
+
+                auto declaredTypeInfo =
+                        DiagnosticMessage(tfm::format("The argument's declared type is %s", typeName),
+                                latticeAttributes[i]->getSrcLoc());
 
                 report.addDiagnostic(Diagnostic(Diagnostic::Type::ERROR, std::move(primaryDiagnostic),
                         {std::move(declaredTypeInfo)}));

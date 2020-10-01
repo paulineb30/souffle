@@ -42,11 +42,9 @@ void PrecedenceGraphAnalysis::run(const AstTranslationUnit& translationUnit) {
             visitDepthFirst(c->getBodyLiterals(), [&](const AstAtom& atom) {
                 backingGraph.insert(relationDetail.getRelation(atom.getQualifiedName()), r);
             });
-            // Tom: Not sure why this is necessary. AstAtom isn't a subtype of AstArgument so this should never do anything.
             visitDepthFirst(c->getHead()->getConcreteArguments(), [&](const AstAtom& atom) {
                 backingGraph.insert(relationDetail.getRelation(atom.getQualifiedName()), r);
             });
-            // Tom: Added to mirror the above just in case
             visitDepthFirst(c->getHead()->getLatticeArguments(), [&](const AstAtom& atom) {
                 backingGraph.insert(relationDetail.getRelation(atom.getQualifiedName()), r);
             });

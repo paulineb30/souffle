@@ -36,21 +36,21 @@ class RamRelation : public RamNode {
 public:
     RamRelation(std::string name, size_t concreteArity, size_t latticeArity, size_t auxiliaryArity,
             std::vector<std::string> concreteAttributeNames, std::vector<std::string> concreteAttributeTypes,
-            std::vector<std::string> latticeAttributeNames, std::vector<std::string> latticeAttributeTypes, RelationRepresentation representation)
+            std::vector<std::string> latticeAttributeNames, std::vector<std::string> latticeAttributeLattices, RelationRepresentation representation)
             : representation(representation), name(std::move(name)), concreteArity(concreteArity),
               latticeArity(latticeArity), auxiliaryArity(auxiliaryArity), concreteAttributeNames(std::move(concreteAttributeNames)),
-              concreteAttributeTypes(std::move(concreteAttributeTypes)), latticeAttributeNames(std::move(latticeAttributeNames)), latticeAttributeTypes(std::move(latticeAttributeTypes)) {
+              concreteAttributeTypes(std::move(concreteAttributeTypes)), latticeAttributeNames(std::move(latticeAttributeNames)), latticeAttributeLattices(std::move(latticeAttributeLattices)) {
         assert(this->concreteAttributeNames.size() == concreteArity && "concrete arity mismatch for attributes");
         assert(this->concreteAttributeTypes.size() == concreteArity && "concrete arity mismatch for types");
         assert(this->latticeAttributeNames.size() == latticeArity && "lattice arity mismatch for attributes");
-        assert(this->latticeAttributeTypes.size() == latticeArity && "lattice arity mismatch for types");
+        assert(this->latticeAttributeLattices.size() == latticeArity && "lattice arity mismatch for lattices");
         for (std::size_t i = 0; i < concreteArity; i++) {
             assert(!this->concreteAttributeNames[i].empty() && "no concrete attribute name specified");
             assert(!this->concreteAttributeTypes[i].empty() && "no concrete attribute type specified");
         }
         for (std::size_t i = 0; i < latticeArity; i++) {
             assert(!this->latticeAttributeNames[i].empty() && "no lattice attribute name specified");
-            assert(!this->latticeAttributeTypes[i].empty() && "no lattice attribute type specified");
+            assert(!this->latticeAttributeLattices[i].empty() && "no lattice attribute lattice specified");
         }
     }
 
@@ -70,8 +70,8 @@ public:
     }
 
     /** @brief Get lattice attribute types */
-    const std::vector<std::string>& getLatticeAttributeTypes() const {
-        return latticeAttributeTypes;
+    const std::vector<std::string>& getLatticeAttributeLattices() const {
+        return latticeAttributeLattices;
     }
 
     /** @brief Get lattice attribute names */
@@ -115,7 +115,7 @@ public:
     }
 
     RamRelation* clone() const override {
-        return new RamRelation(name, concreteArity, latticeArity, auxiliaryArity, concreteAttributeNames, concreteAttributeTypes, latticeAttributeNames, latticeAttributeTypes, representation);
+        return new RamRelation(name, concreteArity, latticeArity, auxiliaryArity, concreteAttributeNames, concreteAttributeTypes, latticeAttributeNames, latticeAttributeLattices, representation);
     }
 
 protected:
@@ -131,19 +131,19 @@ protected:
                 }
             }
             if (latticeArity > 0) {
-                out << "; " << latticeAttributeNames[0] << ":" << latticeAttributeTypes[0];
+                out << "; " << latticeAttributeNames[0] << ":" << latticeAttributeLattices[0];
                 for (unsigned i = 1; i < latticeArity; i++) {
                     out << ",";
-                    out << latticeAttributeNames[i] << ":" << latticeAttributeTypes[i];
+                    out << latticeAttributeNames[i] << ":" << latticeAttributeLattices[i];
                 }
             }
             out << ")";
             out << " " << representation;
         } else if (latticeArity > 0) {
-            out << "(; " << latticeAttributeNames[0] << ":" << latticeAttributeTypes[0];
+            out << "(; " << latticeAttributeNames[0] << ":" << latticeAttributeLattices[0];
             for (unsigned i = 1; i < latticeArity; i++) {
                 out << ",";
-                out << latticeAttributeNames[i] << ":" << latticeAttributeTypes[i];
+                out << latticeAttributeNames[i] << ":" << latticeAttributeLattices[i];
             }
             out << ")";
             out << " " << representation;
@@ -157,7 +157,7 @@ protected:
         const auto& other = static_cast<const RamRelation&>(node);
         return representation == other.representation && name == other.name && concreteArity == other.concreteArity &&
                latticeArity == other.latticeArity && auxiliaryArity == other.auxiliaryArity && concreteAttributeNames == other.concreteAttributeNames &&
-               concreteAttributeTypes == other.concreteAttributeTypes && latticeAttributeNames == other.latticeAttributeNames && latticeAttributeTypes == other.latticeAttributeTypes;
+               concreteAttributeTypes == other.concreteAttributeTypes && latticeAttributeNames == other.latticeAttributeNames && latticeAttributeLattices == other.latticeAttributeLattices;
     }
 
 protected:
@@ -186,7 +186,7 @@ protected:
     const std::vector<std::string> latticeAttributeNames;
 
     /** Type of lattice attributes */
-    const std::vector<std::string> latticeAttributeTypes;
+    const std::vector<std::string> latticeAttributeLattices;
 };
 
 /**

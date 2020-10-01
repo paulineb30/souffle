@@ -445,48 +445,50 @@ std::unique_ptr<AstClause> AstToRamTranslator::ClauseTranslator::getReorderedCla
     return reorderedClause;
 }
 
-AstToRamTranslator::ClauseTranslator::arg_list* AstToRamTranslator::ClauseTranslator::getArgList(
-        const AstNode* curNode, std::map<const AstNode*, std::unique_ptr<arg_list>>& nodeArgs) const {
-    if (nodeArgs.count(curNode) == 0u) {
-        if (auto rec = dynamic_cast<const AstRecordInit*>(curNode)) {
-            nodeArgs[curNode] = std::make_unique<arg_list>(rec->getArguments());
-        } else if (auto atom = dynamic_cast<const AstAtom*>(curNode)) {
-            nodeArgs[curNode] = std::make_unique<arg_list>(atom->getConcreteArguments());
-        } else {
-            fatal("node type doesn't have arguments!");
-        }
-    }
-    return nodeArgs[curNode].get();
-}
-
-void AstToRamTranslator::ClauseTranslator::indexValues(const AstNode* curNode,
-        std::map<const AstNode*, std::unique_ptr<arg_list>>& nodeArgs,
-        std::map<const arg_list*, int>& arg_level, RamRelationReference* relation) {
-    arg_list* cur = getArgList(curNode, nodeArgs);
-    for (size_t pos = 0; pos < cur->size(); ++pos) {
+void AstToRamTranslator::ClauseTranslator::indexRecord(const AstRecordInit* rec) {
+    op_nesting.push_back(rec);
+    const auto curLevel = level;
+    const auto& arguments = rec->getArguments();
+    for (size_t pos = 0; pos < arguments.size(); ++pos) {
         // get argument
-        auto& arg = (*cur)[pos];
+        const auto& arg = arguments[pos];
 
         // check for variable references
         if (auto var = dynamic_cast<const AstVariable*>(arg)) {
-            if (pos < relation->get()->getConcreteArity()) {
-                valueIndex.addVarReference(*var, arg_level[cur], pos, souffle::clone(relation));
-            } else {
-                valueIndex.addVarReference(*var, arg_level[cur], pos);
-            }
+            valueIndex.addVarReference(*var, curLevel, pos, false);
+        } else if (auto rec = dynamic_cast<const AstRecordInit*>(arg)) {
+            valueIndex.setRecordDefinition(*rec, curLevel, pos);
+            ++level;
+            indexRecord(rec);
         }
+    }
+}
 
-        // check for nested records
-        if (auto rec = dynamic_cast<const AstRecordInit*>(arg)) {
-            // introduce new nesting level for unpack
-            op_nesting.push_back(rec);
-            arg_level[getArgList(rec, nodeArgs)] = level++;
+void AstToRamTranslator::ClauseTranslator::indexAtom(const AstAtom* atom) {
+    op_nesting.push_back(atom);
+    const auto curLevel = level;
+    const auto& concreteArguments = atom->getConcreteArguments();
+    for (size_t pos = 0; pos < concreteArguments.size(); ++pos) {
+        // get argument
+        const auto& arg = concreteArguments[pos];
 
-            // register location of record
-            valueIndex.setRecordDefinition(*rec, arg_level[cur], pos);
+        // check for variable references
+        if (auto var = dynamic_cast<const AstVariable*>(arg)) {
+            valueIndex.addVarReference(*var, curLevel, pos, false);
+        } else if (auto rec = dynamic_cast<const AstRecordInit*>(arg)) {
+            valueIndex.setRecordDefinition(*rec, curLevel, pos);
+            level++;
+            indexRecord(rec);
+        }
+    }
+    const auto& latticeArguments = atom->getLatticeArguments();
+    for (size_t pos = 0; pos < latticeArguments.size(); ++pos) {
+        // get argument
+        const auto& arg = latticeArguments[pos];
 
-            // resolve nested components
-            indexValues(rec, nodeArgs, arg_level, relation);
+        // check for variable references
+        if (auto var = dynamic_cast<const AstVariable*>(arg)) {
+            valueIndex.addVarReference(*var, curLevel, pos, true);
         }
     }
 }
@@ -494,17 +496,8 @@ void AstToRamTranslator::ClauseTranslator::indexValues(const AstNode* curNode,
 /** index values in rule */
 void AstToRamTranslator::ClauseTranslator::createValueIndex(const AstClause& clause) {
     for (const auto* atom : getBodyLiterals<AstAtom>(clause)) {
-        // std::map<const arg_list*, int> arg_level;
-        std::map<const AstNode*, std::unique_ptr<arg_list>> nodeArgs;
-
-        std::map<const arg_list*, int> arg_level;
-        nodeArgs[atom] = std::make_unique<arg_list>(atom->getConcreteArguments());
-        // the atom is obtained at the current level
-        // increment nesting level for the atom
-        arg_level[nodeArgs[atom].get()] = level++;
-        op_nesting.push_back(atom);
-
-        indexValues(atom, nodeArgs, arg_level, translator.translateRelation(atom).get());
+        indexAtom(atom);
+        ++level;
     }
 
     // add aggregation functions
@@ -517,7 +510,7 @@ void AstToRamTranslator::ClauseTranslator::createValueIndex(const AstClause& cla
             generators.push_back(&arg);
 
             int aggLoc = level++;
-            valueIndex.setGeneratorLoc(arg, Location({aggLoc, 0}));
+            valueIndex.setGeneratorLoc(arg, aggLoc, 0);
             return aggLoc;
         };
 
@@ -537,7 +530,7 @@ void AstToRamTranslator::ClauseTranslator::createValueIndex(const AstClause& cla
                     for (auto* arg : atom->getConcreteArguments()) {
                         if (const auto* var = dynamic_cast<const AstVariable*>(arg)) {
                             valueIndex.addVarReference(
-                                    *var, *aggLoc, (int)pos, translator.translateRelation(atom));
+                                    *var, *aggLoc, (int)pos, false);
                         }
                         ++pos;
                     }
@@ -1594,7 +1587,7 @@ void AstToRamTranslator::translateProgram(const AstTranslationUnit& translationU
             const auto& latticeAttributes = rel->getLatticeAttributes();
             std::vector<std::string> concreteAttributeNames;
             std::vector<std::string> concreteAttributeTypeQualifiers;
-            for (size_t i = 0; i < rel->getConcreteArity(); ++i) {
+            for (size_t i = 0; i < concreteArity; ++i) {
                 concreteAttributeNames.push_back(concreteAttributes[i]->getName());
                 if (typeEnv != nullptr) {
                     concreteAttributeTypeQualifiers.push_back(
@@ -1602,25 +1595,20 @@ void AstToRamTranslator::translateProgram(const AstTranslationUnit& translationU
                 }
             }
             std::vector<std::string> latticeAttributeNames;
-            std::vector<std::string> latticeAttributeTypeQualifiers;
-            for (size_t i = 0; i < rel->getLatticeArity(); ++i) {
+            std::vector<std::string> latticeAttributeLattices;
+            for (size_t i = 0; i < latticeArity; ++i) {
                 latticeAttributeNames.push_back(latticeAttributes[i]->getName());
-                if (typeEnv != nullptr) {
-                    auto latticeName = latticeAttributes[i]->getLatticeName();
-                    auto base = getLattice(*program, latticeName)->getBase();
-                    latticeAttributeTypeQualifiers.push_back(
-                            getTypeQualifier(typeEnv->getType(base)));
-                }
+                latticeAttributeLattices.push_back(latticeAttributes[i]->getLatticeName().toString());
             }
             ramRels[name] = std::make_unique<RamRelation>(
-                    name, concreteArity, latticeArity, auxiliaryArity, concreteAttributeNames, concreteAttributeTypeQualifiers, latticeAttributeNames, latticeAttributeTypeQualifiers, representation);
+                    name, concreteArity, latticeArity, auxiliaryArity, concreteAttributeNames, concreteAttributeTypeQualifiers, latticeAttributeNames, latticeAttributeLattices, representation);
             if (isRecursive) {
                 std::string deltaName = "@delta_" + name;
                 std::string newName = "@new_" + name;
                 ramRels[deltaName] = std::make_unique<RamRelation>(deltaName, concreteArity, latticeArity, auxiliaryArity,
-                        concreteAttributeNames, concreteAttributeTypeQualifiers, latticeAttributeNames, latticeAttributeTypeQualifiers, representation);
+                        concreteAttributeNames, concreteAttributeTypeQualifiers, latticeAttributeNames, latticeAttributeLattices, representation);
                 ramRels[newName] = std::make_unique<RamRelation>(newName, concreteArity, latticeArity, auxiliaryArity,
-                        concreteAttributeNames, concreteAttributeTypeQualifiers, latticeAttributeNames, latticeAttributeTypeQualifiers, representation);
+                        concreteAttributeNames, concreteAttributeTypeQualifiers, latticeAttributeNames, latticeAttributeLattices, representation);
             }
         }
     }
