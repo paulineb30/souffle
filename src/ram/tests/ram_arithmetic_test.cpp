@@ -21,6 +21,7 @@
 #include "interpreter/InterpreterEngine.h"
 #include "ram/Expression.h"
 #include "ram/IntrinsicOperator.h"
+#include "ram/Lattice.h"
 #include "ram/Program.h"
 #include "ram/Query.h"
 #include "ram/Relation.h"
@@ -61,7 +62,7 @@ RamDomain evalExpression(std::unique_ptr<RamExpression> expression, SymbolTable&
     std::vector<std::unique_ptr<RamRelation>> rels;
 
     std::unique_ptr<RamProgram> prog =
-            std::make_unique<RamProgram>(std::move(rels), std::make_unique<RamSequence>(), std::move(subs));
+            std::make_unique<RamProgram>(std::move(rels), std::vector<std::unique_ptr<RamLattice>>(), std::make_unique<RamSequence>(), std::move(subs));
 
     ErrorReport errReport;
     DebugReport debugReport;

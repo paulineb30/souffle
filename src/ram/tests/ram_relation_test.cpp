@@ -21,6 +21,7 @@
 #include "interpreter/InterpreterEngine.h"
 #include "ram/Expression.h"
 #include "ram/IO.h"
+#include "ram/Lattice.h"
 #include "ram/Program.h"
 #include "ram/Project.h"
 #include "ram/Query.h"
@@ -84,7 +85,7 @@ const std::string testInterpreterStore(std::vector<std::string> attribs,
     rels.push_back(std::move(myrel));
     std::map<std::string, std::unique_ptr<RamStatement>> subs;
     std::unique_ptr<RamProgram> prog =
-            std::make_unique<RamProgram>(std::move(rels), std::move(main), std::move(subs));
+            std::make_unique<RamProgram>(std::move(rels), std::vector<std::unique_ptr<RamLattice>>(), std::move(main), std::move(subs));
 
     SymbolTable symTab;
     ErrorReport errReport;
@@ -281,7 +282,7 @@ TEST(IO_store, SignedChangedDelimiter) {
     rels.push_back(std::move(myrel));
     std::map<std::string, std::unique_ptr<RamStatement>> subs;
     std::unique_ptr<RamProgram> prog =
-            std::make_unique<RamProgram>(std::move(rels), std::move(main), std::move(subs));
+            std::make_unique<RamProgram>(std::move(rels), std::vector<std::unique_ptr<RamLattice>>(), std::move(main), std::move(subs));
 
     SymbolTable symTab;
     ErrorReport errReport;
@@ -362,7 +363,7 @@ TEST(IO_store, MixedTypes) {
     rels.push_back(std::move(myrel));
     std::map<std::string, std::unique_ptr<RamStatement>> subs;
     std::unique_ptr<RamProgram> prog =
-            std::make_unique<RamProgram>(std::move(rels), std::move(main), std::move(subs));
+            std::make_unique<RamProgram>(std::move(rels), std::vector<std::unique_ptr<RamLattice>>(), std::move(main), std::move(subs));
 
     RamTranslationUnit translationUnit(std::move(prog), symbolTable, errReport, debugReport);
 
@@ -433,7 +434,7 @@ TEST(IO_load, Signed) {
     rels.push_back(std::move(myrel));
     std::map<std::string, std::unique_ptr<RamStatement>> subs;
     std::unique_ptr<RamProgram> prog =
-            std::make_unique<RamProgram>(std::move(rels), std::move(main), std::move(subs));
+            std::make_unique<RamProgram>(std::move(rels), std::vector<std::unique_ptr<RamLattice>>(), std::move(main), std::move(subs));
 
     SymbolTable symTab;
     ErrorReport errReport;
@@ -502,7 +503,7 @@ TEST(IO_load, Float) {
     rels.push_back(std::move(myrel));
     std::map<std::string, std::unique_ptr<RamStatement>> subs;
     std::unique_ptr<RamProgram> prog =
-            std::make_unique<RamProgram>(std::move(rels), std::move(main), std::move(subs));
+            std::make_unique<RamProgram>(std::move(rels), std::vector<std::unique_ptr<RamLattice>>(), std::move(main), std::move(subs));
 
     SymbolTable symTab;
     ErrorReport errReport;
@@ -571,7 +572,7 @@ TEST(IO_load, Unsigned) {
     rels.push_back(std::move(myrel));
     std::map<std::string, std::unique_ptr<RamStatement>> subs;
     std::unique_ptr<RamProgram> prog =
-            std::make_unique<RamProgram>(std::move(rels), std::move(main), std::move(subs));
+            std::make_unique<RamProgram>(std::move(rels), std::vector<std::unique_ptr<RamLattice>>(), std::move(main), std::move(subs));
 
     SymbolTable symTab;
     ErrorReport errReport;
@@ -640,7 +641,7 @@ TEST(IO_load, MixedTypesLoad) {
     rels.push_back(std::move(myrel));
     std::map<std::string, std::unique_ptr<RamStatement>> subs;
     std::unique_ptr<RamProgram> prog =
-            std::make_unique<RamProgram>(std::move(rels), std::move(main), std::move(subs));
+            std::make_unique<RamProgram>(std::move(rels), std::vector<std::unique_ptr<RamLattice>>(), std::move(main), std::move(subs));
 
     SymbolTable symTab;
     ErrorReport errReport;
