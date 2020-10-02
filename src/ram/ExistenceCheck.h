@@ -42,15 +42,19 @@ namespace souffle {
 class RamExistenceCheck : public RamAbstractExistenceCheck {
 public:
     RamExistenceCheck(
-            std::unique_ptr<RamRelationReference> relRef, std::vector<std::unique_ptr<RamExpression>> vals)
-            : RamAbstractExistenceCheck(std::move(relRef), std::move(vals)) {}
+            std::unique_ptr<RamRelationReference> relRef, std::vector<std::unique_ptr<RamExpression>> concreteVals, std::vector<std::unique_ptr<RamExpression>> latticeVals)
+            : RamAbstractExistenceCheck(std::move(relRef), std::move(concreteVals), std::move(latticeVals)) {}
 
     RamExistenceCheck* clone() const override {
-        std::vector<std::unique_ptr<RamExpression>> newValues;
-        for (auto& cur : values) {
-            newValues.emplace_back(cur->clone());
+        std::vector<std::unique_ptr<RamExpression>> newConcreteValues;
+        for (auto& cur : concreteValues) {
+            newConcreteValues.emplace_back(cur->clone());
         }
-        return new RamExistenceCheck(souffle::clone(relationRef), std::move(newValues));
+        std::vector<std::unique_ptr<RamExpression>> newLatticeValues;
+        for (auto& cur : latticeValues) {
+            newLatticeValues.emplace_back(cur->clone());
+        }
+        return new RamExistenceCheck(souffle::clone(relationRef), std::move(newConcreteValues), std::move(newLatticeValues));
     }
 };
 

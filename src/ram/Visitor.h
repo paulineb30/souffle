@@ -46,6 +46,7 @@
 #include "ram/IndexOperation.h"
 #include "ram/IndexScan.h"
 #include "ram/IntrinsicOperator.h"
+#include "ram/LeqConstraint.h"
 #include "ram/ListStatement.h"
 #include "ram/LogRelationTimer.h"
 #include "ram/LogSize.h"
@@ -167,6 +168,7 @@ struct RamVisitor : public ram_visitor_tag {
         FORWARD(Conjunction);
         FORWARD(Negation);
         FORWARD(Constraint);
+        FORWARD(LeqConstraint);
 
         // Operations
         FORWARD(Filter);
@@ -281,6 +283,7 @@ protected:
     LINK(Conjunction, Condition);
     LINK(Negation, Condition);
     LINK(Constraint, Condition);
+    LINK(LeqConstraint, Condition);
     LINK(ProvenanceExistenceCheck, AbstractExistenceCheck);
     LINK(ExistenceCheck, AbstractExistenceCheck);
     LINK(EmptinessCheck, Condition);

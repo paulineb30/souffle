@@ -42,7 +42,7 @@ std::unique_ptr<RamOperation> IfConversionTransformer::rewriteIndexScan(const Ra
     // if not used, transform the IndexScan operation to an existence check
     if (tupleNotUsed) {
         // replace IndexScan with an Filter/Existence check
-        std::vector<std::unique_ptr<RamExpression>> newValues;
+        std::vector<std::unique_ptr<RamExpression>> newConcreteValues;
 
         size_t arity = indexScan->getRangePattern().first.size();
         for (size_t i = 0; i < arity; ++i) {
@@ -56,7 +56,7 @@ std::unique_ptr<RamOperation> IfConversionTransformer::rewriteIndexScan(const Ra
             if (cur != nullptr) {
                 val = cur->clone();
             }
-            newValues.emplace_back(val);
+            newConcreteValues.emplace_back(val);
         }
 
         // check if there is a break statement nested in the Scan - if so, remove it
@@ -67,10 +67,16 @@ std::unique_ptr<RamOperation> IfConversionTransformer::rewriteIndexScan(const Ra
             newOp = indexScan->getOperation().clone();
         }
 
+        std::vector<std::unique_ptr<RamExpression>> newLatticeValues;
+        size_t latticeArity = indexScan->getRelation().getLatticeArity();
+        for (size_t i = 0; i < latticeArity; ++i) {
+            newLatticeValues.emplace_back(std::make_unique<RamUndefValue>());
+        }
+
         return std::make_unique<RamFilter>(
                 std::make_unique<RamExistenceCheck>(
                         std::make_unique<RamRelationReference>(&indexScan->getRelation()),
-                        std::move(newValues)),
+                        std::move(newConcreteValues), std::move(newLatticeValues)),
                 std::unique_ptr<RamOperation>(newOp), indexScan->getProfileText());
     }
     return nullptr;

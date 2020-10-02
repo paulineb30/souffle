@@ -73,14 +73,14 @@ bool IndexedInequalityTransformer::transformIndexToFilter(RamProgram& program) {
 
                     if (!isRamUndefValue(pattern.first[i])) {
                         lowerBound = std::make_unique<RamConstraint>(BinaryConstraintOp::GE,
-                                std::make_unique<RamTupleElement>(indexOperation->getTupleId(), i),
+                                std::make_unique<RamTupleElement>(indexOperation->getTupleId(), i, false),
                                 souffle::clone(pattern.first[i]));
                         condition = addCondition(std::move(condition), souffle::clone(lowerBound));
                     }
 
                     if (!isRamUndefValue(pattern.second[i])) {
                         upperBound = std::make_unique<RamConstraint>(BinaryConstraintOp::LE,
-                                std::make_unique<RamTupleElement>(indexOperation->getTupleId(), i),
+                                std::make_unique<RamTupleElement>(indexOperation->getTupleId(), i, false),
                                 souffle::clone(pattern.second[i]));
                         condition = addCondition(std::move(condition), souffle::clone(upperBound));
                     }

@@ -71,7 +71,14 @@ protected:
         os << times(" ", tabpos);
         os << "PARALLEL t" << getTupleId() << ".0=";
         RamAbstractAggregate::print(os, tabpos);
-        os << "SEARCH t" << getTupleId() << " ∈ " << getRelation().getName();
+        os << "SEARCH ";
+        if (getRelation().getConcreteArity() > 0) {
+            os << "t" << getTupleId();
+        }
+        if (getRelation().getLatticeArity() > 0) {
+            os << "; l" << getTupleId();
+        }
+        os << " ∈ " << getRelation().getName();
         printIndex(os);
         if (!isRamTrue(condition.get())) {
             os << " WHERE " << getCondition();

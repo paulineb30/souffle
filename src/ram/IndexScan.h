@@ -68,8 +68,14 @@ protected:
     void print(std::ostream& os, int tabpos) const override {
         const RamRelation& rel = getRelation();
         os << times(" ", tabpos);
-        os << "FOR t" << getTupleId() << " IN ";
-        os << rel.getName();
+        os << "FOR ";
+        if (getRelation().getConcreteArity() > 0) {
+            os << "t" << getTupleId();
+        }
+        if (getRelation().getLatticeArity() > 0) {
+            os << "; l" << getTupleId();
+        }
+        os << " IN " << rel.getName();
         printIndex(os);
         os << std::endl;
         RamIndexOperation::print(os, tabpos + 1);

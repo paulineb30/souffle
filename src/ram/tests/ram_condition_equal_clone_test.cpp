@@ -121,12 +121,12 @@ TEST(RamNegation, CloneAndEquals) {
 
 TEST(RamConstraint, CloneAndEquals) {
     // constraint t0.1 = t1.0
-    std::unique_ptr<RamExpression> a_lhs(new RamTupleElement(0, 1));
-    std::unique_ptr<RamExpression> a_rhs(new RamTupleElement(1, 0));
+    std::unique_ptr<RamExpression> a_lhs(new RamTupleElement(0, 1, false));
+    std::unique_ptr<RamExpression> a_rhs(new RamTupleElement(1, 0, false));
     std::unique_ptr<RamConstraint> a(
             new RamConstraint(BinaryConstraintOp::EQ, std::move(a_lhs), std::move(a_rhs)));
-    std::unique_ptr<RamExpression> b_lhs(new RamTupleElement(0, 1));
-    std::unique_ptr<RamExpression> b_rhs(new RamTupleElement(1, 0));
+    std::unique_ptr<RamExpression> b_lhs(new RamTupleElement(0, 1, false));
+    std::unique_ptr<RamExpression> b_rhs(new RamTupleElement(1, 0, false));
     std::unique_ptr<RamConstraint> b(
             new RamConstraint(BinaryConstraintOp::EQ, std::move(b_lhs), std::move(b_rhs)));
     EXPECT_EQ(*a, *b);
@@ -139,11 +139,11 @@ TEST(RamConstraint, CloneAndEquals) {
     EXPECT_NE(b, c);
 
     // constraint t2.0 >= 5
-    std::unique_ptr<RamExpression> d_lhs(new RamTupleElement(2, 0));
+    std::unique_ptr<RamExpression> d_lhs(new RamTupleElement(2, 0, false));
     std::unique_ptr<RamExpression> d_rhs(new RamSignedConstant(5));
     std::unique_ptr<RamConstraint> d(
             new RamConstraint(BinaryConstraintOp::EQ, std::move(d_lhs), std::move(d_rhs)));
-    std::unique_ptr<RamExpression> e_lhs(new RamTupleElement(2, 0));
+    std::unique_ptr<RamExpression> e_lhs(new RamTupleElement(2, 0, false));
     std::unique_ptr<RamExpression> e_rhs(new RamSignedConstant(5));
     std::unique_ptr<RamConstraint> e(
             new RamConstraint(BinaryConstraintOp::EQ, std::move(e_lhs), std::move(e_rhs)));
@@ -162,10 +162,10 @@ TEST(RamExistenceCheck, CloneAndEquals) {
     RamRelation N("N", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     std::vector<std::unique_ptr<RamExpression>> tuple_a;
     tuple_a.emplace_back(new RamSignedConstant(1));
-    RamExistenceCheck a(std::make_unique<RamRelationReference>(&N), std::move(tuple_a));
+    RamExistenceCheck a(std::make_unique<RamRelationReference>(&N), std::move(tuple_a), std::vector<std::unique_ptr<RamExpression>>());
     std::vector<std::unique_ptr<RamExpression>> tuple_b;
     tuple_b.emplace_back(new RamSignedConstant(1));
-    RamExistenceCheck b(std::make_unique<RamRelationReference>(&N), std::move(tuple_b));
+    RamExistenceCheck b(std::make_unique<RamRelationReference>(&N), std::move(tuple_b), std::vector<std::unique_ptr<RamExpression>>());
     EXPECT_EQ(a, b);
     EXPECT_NE(&a, &b);
 
@@ -182,11 +182,11 @@ TEST(RamExistenceCheck, CloneAndEquals) {
     std::vector<std::unique_ptr<RamExpression>> tuple_d;
     tuple_d.emplace_back(new RamSignedConstant(1));
     tuple_d.emplace_back(new RamSignedConstant(2));
-    RamExistenceCheck d(std::make_unique<RamRelationReference>(&edge), std::move(tuple_d));
+    RamExistenceCheck d(std::make_unique<RamRelationReference>(&edge), std::move(tuple_d), std::vector<std::unique_ptr<RamExpression>>());
     std::vector<std::unique_ptr<RamExpression>> tuple_e;
     tuple_e.emplace_back(new RamSignedConstant(1));
     tuple_e.emplace_back(new RamSignedConstant(2));
-    RamExistenceCheck e(std::make_unique<RamRelationReference>(&edge), std::move(tuple_e));
+    RamExistenceCheck e(std::make_unique<RamRelationReference>(&edge), std::move(tuple_e), std::vector<std::unique_ptr<RamExpression>>());
     EXPECT_EQ(d, e);
     EXPECT_NE(&d, &e);
 
@@ -203,10 +203,10 @@ TEST(RamProvenanceExistCheck, CloneAndEquals) {
     RamRelation N("N", 1, 0, 1, {"x"}, {"i"}, {}, {}, RelationRepresentation::DEFAULT);
     std::vector<std::unique_ptr<RamExpression>> tuple_a;
     tuple_a.emplace_back(new RamSignedConstant(1));
-    RamExistenceCheck a(std::make_unique<RamRelationReference>(&N), std::move(tuple_a));
+    RamExistenceCheck a(std::make_unique<RamRelationReference>(&N), std::move(tuple_a), std::vector<std::unique_ptr<RamExpression>>());
     std::vector<std::unique_ptr<RamExpression>> tuple_b;
     tuple_b.emplace_back(new RamSignedConstant(1));
-    RamExistenceCheck b(std::make_unique<RamRelationReference>(&N), std::move(tuple_b));
+    RamExistenceCheck b(std::make_unique<RamRelationReference>(&N), std::move(tuple_b), std::vector<std::unique_ptr<RamExpression>>());
     EXPECT_EQ(a, b);
     EXPECT_NE(&a, &b);
 

@@ -96,7 +96,13 @@ protected:
     void print(std::ostream& os, int tabpos) const override {
         const RamRelation& rel = getRelation();
         os << times(" ", tabpos);
-        os << "CHOICE " << rel.getName() << " AS t" << getTupleId();
+        os << "CHOICE " << rel.getName() << " AS ";
+        if (getRelation().getConcreteArity() > 0) {
+            os << "t" << getTupleId();
+        }
+        if (getRelation().getLatticeArity() > 0) {
+            os << "; l" << getTupleId();
+        }
         printIndex(os);
         os << " WHERE " << getCondition();
         os << std::endl;

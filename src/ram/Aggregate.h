@@ -77,7 +77,14 @@ protected:
         os << times(" ", tabpos);
         os << "t" << getTupleId() << ".0=";
         RamAbstractAggregate::print(os, tabpos);
-        os << "FOR ALL t" << getTupleId() << " ∈ " << getRelation().getName();
+        os << "FOR ALL ";
+        if (getRelation().getConcreteArity() > 0) {
+            os << "t" << getTupleId();
+        }
+        if (getRelation().getLatticeArity() > 0) {
+            os << "; l" << getTupleId();
+        }
+        os << " ∈ " << getRelation().getName();
         if (!isRamTrue(condition.get())) {
             os << " WHERE " << getCondition();
         }

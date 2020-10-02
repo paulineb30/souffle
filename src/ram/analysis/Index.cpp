@@ -610,7 +610,7 @@ SearchSignature RamIndexAnalysis::getSearchSignature(const RamIndexOperation* se
 
 SearchSignature RamIndexAnalysis::getSearchSignature(
         const RamProvenanceExistenceCheck* provExistCheck) const {
-    const auto values = provExistCheck->getValues();
+    const auto values = provExistCheck->getConcreteValues();
     auto auxiliaryArity = provExistCheck->getRelation().getAuxiliaryArity();
 
     SearchSignature keys(values.size());
@@ -631,7 +631,7 @@ SearchSignature RamIndexAnalysis::getSearchSignature(
 }
 
 SearchSignature RamIndexAnalysis::getSearchSignature(const RamExistenceCheck* existCheck) const {
-    return searchSignature(existCheck->getRelation().getConcreteArity(), existCheck->getValues());
+    return searchSignature(existCheck->getRelation().getConcreteArity(), existCheck->getConcreteValues());
 }
 
 SearchSignature RamIndexAnalysis::getSearchSignature(const RamRelation* ramRel) const {
@@ -639,7 +639,7 @@ SearchSignature RamIndexAnalysis::getSearchSignature(const RamRelation* ramRel) 
 }
 
 bool RamIndexAnalysis::isTotalSignature(const RamAbstractExistenceCheck* existCheck) const {
-    for (const auto& cur : existCheck->getValues()) {
+    for (const auto& cur : existCheck->getConcreteValues()) {
         if (isRamUndefValue(cur)) {
             return false;
         }

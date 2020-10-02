@@ -1548,7 +1548,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             auto ctxName = "READ_OP_CONTEXT(" + synthesiser.getOpContextName(rel) + ")";
 
             // create projected tuple
-            out << "Tuple<RamDomain," << arity << "> tuple{{" << join(project.getValues(), ",", rec)
+            out << "Tuple<RamDomain," << arity << "> tuple{{" << join(project.getConcreteValues(), ",", rec)
                 << "}};\n";
 
             // insert tuple
@@ -1704,14 +1704,14 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             // if it is total we use the contains function
             if (isa->isTotalSignature(&exists)) {
                 out << relName << "->"
-                    << "contains(Tuple<RamDomain," << arity << ">{{" << join(exists.getValues(), ",", rec)
+                    << "contains(Tuple<RamDomain," << arity << ">{{" << join(exists.getConcreteValues(), ",", rec)
                     << "}}," << ctxName << ")" << after;
                 PRINT_END_COMMENT(out);
                 return;
             }
 
-            auto rangePatternLower = exists.getValues();
-            auto rangePatternUpper = exists.getValues();
+            auto rangePatternLower = exists.getConcreteValues();
+            auto rangePatternUpper = exists.getConcreteValues();
 
             auto rangeBounds = getPaddedRangeBounds(rel, rangePatternLower, rangePatternUpper);
             // else we conduct a range query
@@ -1742,9 +1742,9 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             // parts refers to payload + rule number
             size_t parts = arity - auxiliaryArity + 1;
 
-            // make a copy of provExists.getValues() so we can be sure that vals is always the same vector
-            // since provExists.getValues() creates a new vector on the stack each time
-            auto vals = provExists.getValues();
+            // make a copy of provExists.getConcreteValues() so we can be sure that vals is always the same vector
+            // since provExists.getConcreteValues() creates a new vector on the stack each time
+            auto vals = provExists.getConcreteValues();
 
             // sanity check to ensure that all payload values are specified
             for (size_t i = 0; i < arity - auxiliaryArity; i++) {
@@ -1772,7 +1772,7 @@ void Synthesiser::emitCode(std::ostream& out, const RamStatement& stmt) {
             out << "if (existenceCheck.empty()) return false; else return ((*existenceCheck.begin())["
                 << arity - auxiliaryArity + 1 << "] <= ";
 
-            visit(*(provExists.getValues()[arity - auxiliaryArity + 1]), out);
+            visit(*(provExists.getConcreteValues()[arity - auxiliaryArity + 1]), out);
             out << ")";
             out << ";}()\n";
             PRINT_END_COMMENT(out);

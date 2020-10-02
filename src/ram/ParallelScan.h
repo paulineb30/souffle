@@ -65,7 +65,13 @@ public:
 protected:
     void print(std::ostream& os, int tabpos) const override {
         os << times(" ", tabpos);
-        os << "PARALLEL FOR t" << getTupleId();
+        os << "PARALLEL FOR ";
+        if (getRelation().getConcreteArity() > 0) {
+            os << "t" << getTupleId();
+        }
+        if (getRelation().getLatticeArity() > 0) {
+            os << "; l" << getTupleId();
+        }
         os << " IN " << getRelation().getName() << std::endl;
         RamRelationOperation::print(os, tabpos + 1);
     }

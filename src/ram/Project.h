@@ -46,10 +46,13 @@ namespace souffle {
 class RamProject : public RamOperation {
 public:
     RamProject(std::unique_ptr<RamRelationReference> relRef,
-            std::vector<std::unique_ptr<RamExpression>> expressions)
-            : relationRef(std::move(relRef)), expressions(std::move(expressions)) {
+            std::vector<std::unique_ptr<RamExpression>> concreteExpressions, std::vector<std::unique_ptr<RamExpression>> latticeExpressions)
+            : relationRef(std::move(relRef)), concreteExpressions(std::move(concreteExpressions)), latticeExpressions(std::move(latticeExpressions)) {
         assert(relationRef != nullptr && "Relation reference is a null-pointer");
-        for (auto const& expr : expressions) {
+        for (auto const& expr : concreteExpressions) {
+            assert(expr != nullptr && "Expression is a null-pointer");
+        }
+        for (auto const& expr : latticeExpressions) {
             assert(expr != nullptr && "Expression is a null-pointer");
         }
     }
@@ -59,31 +62,46 @@ public:
         return *relationRef->get();
     }
 
-    /** @brief Get expressions */
-    std::vector<RamExpression*> getValues() const {
-        return toPtrVector(expressions);
+    /** @brief Get concrete expressions */
+    std::vector<RamExpression*> getConcreteValues() const {
+        return toPtrVector(concreteExpressions);
+    }
+
+    /** @brief Get lattice expressions */
+    std::vector<RamExpression*> getLatticeValues() const {
+        return toPtrVector(latticeExpressions);
     }
 
     std::vector<const RamNode*> getChildNodes() const override {
         std::vector<const RamNode*> res;
         res.push_back(relationRef.get());
-        for (const auto& expr : expressions) {
+        for (const auto& expr : concreteExpressions) {
+            res.push_back(expr.get());
+        }
+        for (const auto& expr : latticeExpressions) {
             res.push_back(expr.get());
         }
         return res;
     }
 
     RamProject* clone() const override {
-        std::vector<std::unique_ptr<RamExpression>> newValues;
-        for (auto& expr : expressions) {
-            newValues.emplace_back(expr->clone());
+        std::vector<std::unique_ptr<RamExpression>> newConcreteValues;
+        for (auto& expr : concreteExpressions) {
+            newConcreteValues.emplace_back(expr->clone());
         }
-        return new RamProject(souffle::clone(relationRef), std::move(newValues));
+        std::vector<std::unique_ptr<RamExpression>> newLatticeValues;
+        for (auto& expr : latticeExpressions) {
+            newLatticeValues.emplace_back(expr->clone());
+        }
+        return new RamProject(souffle::clone(relationRef), std::move(newConcreteValues), std::move(newLatticeValues));
     }
 
     void apply(const RamNodeMapper& map) override {
         relationRef = map(std::move(relationRef));
-        for (auto& expr : expressions) {
+        for (auto& expr : concreteExpressions) {
+            expr = map(std::move(expr));
+        }
+        for (auto& expr : latticeExpressions) {
             expr = map(std::move(expr));
         }
     }
@@ -91,20 +109,27 @@ public:
 protected:
     void print(std::ostream& os, int tabpos) const override {
         os << times(" ", tabpos);
-        os << "PROJECT (" << join(expressions, ", ", print_deref<std::unique_ptr<RamExpression>>())
-           << ") INTO " << getRelation().getName() << std::endl;
+        os << "PROJECT (";
+        os << join(concreteExpressions, ", ", print_deref<std::unique_ptr<RamExpression>>());
+        if (getRelation().getLatticeArity() > 0) {
+        os << "; " << join(latticeExpressions, ", ", print_deref<std::unique_ptr<RamExpression>>());
+        }
+        os << ") INTO " << getRelation().getName() << std::endl;
     }
 
     bool equal(const RamNode& node) const override {
         const auto& other = static_cast<const RamProject&>(node);
-        return equal_ptr(relationRef, other.relationRef) && equal_targets(expressions, other.expressions);
+        return equal_ptr(relationRef, other.relationRef) && equal_targets(concreteExpressions, other.concreteExpressions) && equal_targets(latticeExpressions, other.latticeExpressions);
     }
 
     /** Relation that values are projected into */
     std::unique_ptr<RamRelationReference> relationRef;
 
-    /* Values (expressions) for projection */
-    std::vector<std::unique_ptr<RamExpression>> expressions;
+    /* Concrete values (expressions) for projection */
+    std::vector<std::unique_ptr<RamExpression>> concreteExpressions;
+
+    /* Lattice values (expressions) for projection */
+    std::vector<std::unique_ptr<RamExpression>> latticeExpressions;
 };
 
 }  // namespace souffle

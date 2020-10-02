@@ -333,6 +333,7 @@ souffle_sources = \
         ram/IndexScan.h                                    \
         ram/IntrinsicOperator.h                            \
         ram/LambdaNodeMapper.h                             \
+        ram/LeqConstraint.h                                \
         ram/ListStatement.h                                \
         ram/LogRelationTimer.h                             \
         ram/LogSize.h                                      \

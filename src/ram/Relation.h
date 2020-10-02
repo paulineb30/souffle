@@ -131,19 +131,19 @@ protected:
                 }
             }
             if (latticeArity > 0) {
-                out << "; " << latticeAttributeNames[0] << ":" << latticeAttributeLattices[0];
+                out << "; " << latticeAttributeNames[0] << "<-" << latticeAttributeLattices[0];
                 for (unsigned i = 1; i < latticeArity; i++) {
                     out << ",";
-                    out << latticeAttributeNames[i] << ":" << latticeAttributeLattices[i];
+                    out << latticeAttributeNames[i] << "<-" << latticeAttributeLattices[i];
                 }
             }
             out << ")";
             out << " " << representation;
         } else if (latticeArity > 0) {
-            out << "(; " << latticeAttributeNames[0] << ":" << latticeAttributeLattices[0];
+            out << "(; " << latticeAttributeNames[0] << "<-" << latticeAttributeLattices[0];
             for (unsigned i = 1; i < latticeArity; i++) {
                 out << ",";
-                out << latticeAttributeNames[i] << ":" << latticeAttributeLattices[i];
+                out << latticeAttributeNames[i] << "<-" << latticeAttributeLattices[i];
             }
             out << ")";
             out << " " << representation;

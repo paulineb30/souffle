@@ -17,6 +17,7 @@
 #pragma once
 
 #include "ram/LambdaNodeMapper.h"
+#include "ram/Lattice.h"
 #include "ram/Node.h"
 #include "ram/NodeMapper.h"
 #include "ram/Relation.h"
@@ -35,7 +36,7 @@ namespace souffle {
 
 /**
  * @class RamProgram
- * @brief RAM program relation declaration and functions
+ * @brief RAM program relation declarations, lattices and functions
  *
  * A typical example:
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,12 +55,15 @@ private:
     RamProgram() = default;
 
 public:
-    RamProgram(std::vector<std::unique_ptr<RamRelation>> rels, std::unique_ptr<RamStatement> main,
+    RamProgram(std::vector<std::unique_ptr<RamRelation>> rels, std::vector<std::unique_ptr<RamLattice>> lats, std::unique_ptr<RamStatement> main,
             std::map<std::string, std::unique_ptr<RamStatement>> subs)
-            : relations(std::move(rels)), main(std::move(main)), subroutines(std::move(subs)) {
+            : relations(std::move(rels)), lattices(std::move(lats)), main(std::move(main)), subroutines(std::move(subs)) {
         assert(this->main != nullptr && "Main program is a null-pointer");
         for (const auto& rel : relations) {
             assert(rel != nullptr && "Relation is a null-pointer");
+        }
+        for (const auto& lat : lattices) {
+            assert(lat != nullptr && "Lattice is a null-pointer");
         }
         for (const auto& sub : subroutines) {
             assert(sub.second != nullptr && "Subroutine is a null-pointer");
@@ -71,6 +75,9 @@ public:
         children = main->getChildNodes();
         for (auto& rel : relations) {
             children.push_back(rel.get());
+        }
+        for (auto& lat : lattices) {
+            children.push_back(lat.get());
         }
         for (auto& sub : subroutines) {
             children.push_back(sub.second.get());
@@ -86,6 +93,11 @@ public:
     /** @brief Get all relations of RAM program  */
     std::vector<RamRelation*> getRelations() const {
         return toPtrVector(relations);
+    }
+
+    /** @brief Get all lattices of RAM program  */
+    std::vector<RamLattice*> getLattices() const {
+        return toPtrVector(lattices);
     }
 
     /** @brief Get all subroutines of a RAM program */
@@ -107,6 +119,9 @@ public:
         res->main = souffle::clone(main);
         for (auto& rel : relations) {
             res->relations.push_back(souffle::clone(rel));
+        }
+        for (auto& lat : lattices) {
+            res->lattices.push_back(souffle::clone(lat));
         }
         for (auto& sub : subroutines) {
             res->subroutines[sub.first] = souffle::clone(sub.second);
@@ -130,6 +145,9 @@ public:
         for (auto& rel : relations) {
             rel = map(std::move(rel));
         }
+        for (auto& lat : lattices) {
+            lat = map(std::move(lat));
+        }
         for (auto& sub : subroutines) {
             sub.second = map(std::move(sub.second));
         }
@@ -139,8 +157,13 @@ protected:
     void print(std::ostream& out) const override {
         out << "PROGRAM" << std::endl;
         out << " DECLARATION" << std::endl;
+        out << "  LATTICES" << std::endl;
+        for (const auto& lat : lattices) {
+            out << "   " << *lat << std::endl;
+        }
+        out << "  RELATIONS" << std::endl;
         for (const auto& rel : relations) {
-            out << "  " << *rel << std::endl;
+            out << "   " << *rel << std::endl;
         }
         out << " END DECLARATION" << std::endl;
         for (const auto& sub : subroutines) {
@@ -157,13 +180,16 @@ protected:
     bool equal(const RamNode& node) const override {
         const auto& other = static_cast<const RamProgram&>(node);
 
-        return equal_targets(relations, other.relations) && equal_ptr(main, other.main) &&
+        return equal_targets(relations, other.relations) && equal_targets(lattices, other.lattices) && equal_ptr(main, other.main) &&
                equal_targets(subroutines, other.subroutines);
     }
 
 protected:
     /** Relations of RAM program */
     std::vector<std::unique_ptr<RamRelation>> relations;
+
+    /** Lattices of RAM program */
+    std::vector<std::unique_ptr<RamLattice>> lattices;
 
     /** Main program */
     std::unique_ptr<RamStatement> main;

@@ -48,7 +48,7 @@ bool TupleIdTransformer::reorderOperations(RamProgram& program) {
                 if (reorder[element->getTupleId()] != element->getTupleId()) {
                     changed = true;
                     node = std::make_unique<RamTupleElement>(
-                            reorder[element->getTupleId()], element->getElement());
+                            reorder[element->getTupleId()], element->getElement(), element->isLatticeElement());
                 }
             }
             node->apply(makeLambdaRamMapper(elementRewriter));

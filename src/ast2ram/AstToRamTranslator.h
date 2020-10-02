@@ -368,7 +368,7 @@ private:
         virtual std::unique_ptr<RamCondition> createCondition(const AstClause& originalClause);
 
         /** translate RAM code for a constant value */
-        std::unique_ptr<RamOperation> filterByConstraints(size_t level, const std::vector<AstArgument*>& args,
+        std::unique_ptr<RamOperation> filterByConstraints(size_t level, const std::vector<AstArgument*>& concreteArgs, const std::vector<AstArgument*>& latticeArgs,
                 std::unique_ptr<RamOperation> op, bool constrainByFunctors = true);
 
         const AuxiliaryArity* auxArityAnalysis;

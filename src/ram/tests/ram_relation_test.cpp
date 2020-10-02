@@ -78,7 +78,7 @@ const std::string testInterpreterStore(std::vector<std::string> attribs,
     std::map<std::string, std::string> ioDirs = std::map<std::string, std::string>(dirs);
 
     std::unique_ptr<RamStatement> main = std::make_unique<RamSequence>(
-            std::make_unique<RamQuery>(std::make_unique<RamProject>(std::move(ref1), std::move(exprs))),
+            std::make_unique<RamQuery>(std::make_unique<RamProject>(std::move(ref1), std::move(exprs), std::vector<std::unique_ptr<RamExpression>>())),
             std::make_unique<RamIO>(std::move(ref2), ioDirs));
 
     rels.push_back(std::move(myrel));
@@ -275,7 +275,7 @@ TEST(IO_store, SignedChangedDelimiter) {
     }
 
     std::unique_ptr<RamStatement> main = std::make_unique<RamSequence>(
-            std::make_unique<RamQuery>(std::make_unique<RamProject>(std::move(ref1), std::move(exprs))),
+            std::make_unique<RamQuery>(std::make_unique<RamProject>(std::move(ref1), std::move(exprs), std::vector<std::unique_ptr<RamExpression>>())),
             std::make_unique<RamIO>(std::move(ref2), ioDirs));
 
     rels.push_back(std::move(myrel));
@@ -356,7 +356,7 @@ TEST(IO_store, MixedTypes) {
     exprs.push_back(std::make_unique<RamSignedConstant>(symbolTable.lookup("meow")));
 
     std::unique_ptr<RamStatement> main = std::make_unique<RamSequence>(
-            std::make_unique<RamQuery>(std::make_unique<RamProject>(std::move(ref1), std::move(exprs))),
+            std::make_unique<RamQuery>(std::make_unique<RamProject>(std::move(ref1), std::move(exprs), std::vector<std::unique_ptr<RamExpression>>())),
             std::make_unique<RamIO>(std::move(ref2), ioDirs));
 
     rels.push_back(std::move(myrel));

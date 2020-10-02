@@ -122,7 +122,10 @@ int RamLevelAnalysis::getLevel(const RamNode* node) const {
         // project
         int visitProject(const RamProject& project) override {
             int level = -1;
-            for (auto& exp : project.getValues()) {
+            for (auto& exp : project.getConcreteValues()) {
+                level = std::max(level, visit(exp));
+            }
+            for (auto& exp : project.getLatticeValues()) {
                 level = std::max(level, visit(exp));
             }
             return level;
@@ -194,10 +197,18 @@ int RamLevelAnalysis::getLevel(const RamNode* node) const {
             return std::max(visit(binRel.getLHS()), visit(binRel.getRHS()));
         }
 
+        // leq constraint
+        int visitLeqConstraint(const RamLeqConstraint& leq) override {
+            return std::max(visit(leq.getLHS()), visit(leq.getRHS()));
+        }
+
         // existence check
         int visitExistenceCheck(const RamExistenceCheck& exists) override {
             int level = -1;
-            for (const auto& cur : exists.getValues()) {
+            for (const auto& cur : exists.getConcreteValues()) {
+                level = std::max(level, visit(cur));
+            }
+            for (const auto& cur : exists.getLatticeValues()) {
                 level = std::max(level, visit(cur));
             }
             return level;
@@ -206,7 +217,7 @@ int RamLevelAnalysis::getLevel(const RamNode* node) const {
         // provenance existence check
         int visitProvenanceExistenceCheck(const RamProvenanceExistenceCheck& provExists) override {
             int level = -1;
-            for (const auto& cur : provExists.getValues()) {
+            for (const auto& cur : provExists.getConcreteValues()) {
                 level = std::max(level, visit(cur));
             }
             return level;

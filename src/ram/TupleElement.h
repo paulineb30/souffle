@@ -35,7 +35,7 @@ namespace souffle {
  */
 class RamTupleElement : public RamExpression {
 public:
-    RamTupleElement(size_t ident, size_t elem) : identifier(ident), element(elem) {}
+    RamTupleElement(size_t ident, size_t elem, bool isLatticeElement) : identifier(ident), element(elem), latticeElement(isLatticeElement) {}
     /** @brief Get identifier */
     int getTupleId() const {
         return identifier;
@@ -46,18 +46,28 @@ public:
         return element;
     }
 
+    /** @brief Is lattice element */
+    size_t isLatticeElement() const {
+        return latticeElement;
+    }
+
     RamTupleElement* clone() const override {
-        return new RamTupleElement(identifier, element);
+        return new RamTupleElement(identifier, element, latticeElement);
     }
 
 protected:
     void print(std::ostream& os) const override {
-        os << "t" << identifier << "." << element;
+        if (latticeElement) {
+            os << "l";
+        } else {
+            os << "t";
+        }
+        os << identifier << "." << element;
     }
 
     bool equal(const RamNode& node) const override {
         const auto& other = static_cast<const RamTupleElement&>(node);
-        return identifier == other.identifier && element == other.element;
+        return identifier == other.identifier && element == other.element && latticeElement == other.latticeElement;
     }
 
     /** Identifier for the tuple */
@@ -65,6 +75,9 @@ protected:
 
     /** Element number */
     const size_t element;
+
+    /** Whether this is a lattice element or not */
+    const bool latticeElement;
 };
 
 }  // end of namespace souffle

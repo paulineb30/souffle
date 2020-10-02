@@ -36,11 +36,11 @@ class RamProvenanceExistenceCheck : public RamAbstractExistenceCheck {
 public:
     RamProvenanceExistenceCheck(
             std::unique_ptr<RamRelationReference> relRef, std::vector<std::unique_ptr<RamExpression>> vals)
-            : RamAbstractExistenceCheck(std::move(relRef), std::move(vals)) {}
+            : RamAbstractExistenceCheck(std::move(relRef), std::move(vals), std::vector<std::unique_ptr<RamExpression>>()) {}
 
     RamProvenanceExistenceCheck* clone() const override {
         std::vector<std::unique_ptr<RamExpression>> newValues;
-        for (auto& cur : values) {
+        for (auto& cur : concreteValues) {
             newValues.emplace_back(cur->clone());
         }
         return new RamProvenanceExistenceCheck(souffle::clone(relationRef), std::move(newValues));

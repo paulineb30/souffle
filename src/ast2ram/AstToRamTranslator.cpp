@@ -80,6 +80,8 @@
 #include "ram/FloatConstant.h"
 #include "ram/IO.h"
 #include "ram/IntrinsicOperator.h"
+#include "ram/Lattice.h"
+#include "ram/LeqConstraint.h"
 #include "ram/LogRelationTimer.h"
 #include "ram/LogSize.h"
 #include "ram/LogTimer.h"
@@ -139,7 +141,7 @@ inline void appendStmt(
 }
 
 std::unique_ptr<RamTupleElement> AstToRamTranslator::makeRamTupleElement(const Location& loc) {
-    return std::make_unique<RamTupleElement>(loc.identifier, loc.element);
+    return std::make_unique<RamTupleElement>(loc.identifier, loc.element, loc.isLatticeElement);
 }
 
 size_t AstToRamTranslator::getEvaluationArity(const AstAtom* atom) const {
@@ -392,16 +394,21 @@ std::unique_ptr<RamCondition> AstToRamTranslator::translateConstraint(
             }
 
             // else, we construct the atom and create a negation
-            std::vector<std::unique_ptr<RamExpression>> values;
-            auto args = atom->getConcreteArguments();
+            std::vector<std::unique_ptr<RamExpression>> concreteValues;
+            auto concreteArgs = atom->getConcreteArguments();
             for (size_t i = 0; i < arity; i++) {
-                values.push_back(translator.translateValue(args[i], index));
+                concreteValues.push_back(translator.translateValue(concreteArgs[i], index));
             }
             for (size_t i = 0; i < auxiliaryArity; i++) {
-                values.push_back(std::make_unique<RamUndefValue>());
+                concreteValues.push_back(std::make_unique<RamUndefValue>());
+            }
+            std::vector<std::unique_ptr<RamExpression>> latticeValues;
+            auto latticeArgs = atom->getLatticeArguments();
+            for (size_t i = 0; i < latticeArgs.size(); i++) {
+                latticeValues.push_back(translator.translateValue(latticeArgs[i], index));
             }
             return std::make_unique<RamNegation>(std::make_unique<RamExistenceCheck>(
-                    translator.translateRelation(atom), std::move(values)));
+                    translator.translateRelation(atom), std::move(concreteValues), std::move(latticeValues)));
         }
     };
     return ConstraintTranslator(*this, index)(*lit);
@@ -548,15 +555,20 @@ void AstToRamTranslator::ClauseTranslator::createValueIndex(const AstClause& cla
 std::unique_ptr<RamOperation> AstToRamTranslator::ClauseTranslator::createOperation(const AstClause& clause) {
     const auto head = clause.getHead();
 
-    std::vector<std::unique_ptr<RamExpression>> values;
+    std::vector<std::unique_ptr<RamExpression>> concreteValues;
     for (AstArgument* arg : head->getConcreteArguments()) {
-        values.push_back(translator.translateValue(arg, valueIndex));
+        concreteValues.push_back(translator.translateValue(arg, valueIndex));
+    }
+
+    std::vector<std::unique_ptr<RamExpression>> latticeValues;
+    for (AstArgument* arg : head->getLatticeArguments()) {
+        latticeValues.push_back(translator.translateValue(arg, valueIndex));
     }
 
     std::unique_ptr<RamOperation> project =
-            std::make_unique<RamProject>(translator.translateRelation(head), std::move(values));
+            std::make_unique<RamProject>(translator.translateRelation(head), std::move(concreteValues), std::move(latticeValues));
 
-    if (head->getConcreteArity() == 0) {
+    if (head->getConcreteArity() == 0 && head->getLatticeArity() == 0) {
         project = std::make_unique<RamFilter>(
                 std::make_unique<RamEmptinessCheck>(translator.translateRelation(head)), std::move(project));
     }
@@ -603,7 +615,7 @@ std::unique_ptr<RamCondition> AstToRamTranslator::ClauseTranslator::createCondit
 
     // add stopping criteria for nullary relations
     // (if it contains already the null tuple, don't re-compute)
-    if (head->getConcreteArity() == 0) {
+    if (head->getConcreteArity() == 0 && head->getLatticeArity() == 0) {
         return std::make_unique<RamEmptinessCheck>(translator.translateRelation(head));
     }
     return nullptr;
@@ -615,30 +627,55 @@ std::unique_ptr<RamCondition> AstToRamTranslator::ProvenanceClauseTranslator::cr
 }
 
 std::unique_ptr<RamOperation> AstToRamTranslator::ClauseTranslator::filterByConstraints(size_t const level,
-        const std::vector<AstArgument*>& args, std::unique_ptr<RamOperation> op, bool constrainByFunctors) {
-    size_t pos = 0;
+        const std::vector<AstArgument*>& concreteArgs, const std::vector<AstArgument*>& latticeArgs, std::unique_ptr<RamOperation> op, bool constrainByFunctors) {
+    size_t concretePos = 0;
 
-    auto mkFilter = [&](bool isFloatArg, std::unique_ptr<RamExpression> rhs) {
+    auto mkConcreteFilter = [&](bool isFloatArg, std::unique_ptr<RamExpression> rhs) {
         return std::make_unique<RamFilter>(
                 std::make_unique<RamConstraint>(isFloatArg ? BinaryConstraintOp::FEQ : BinaryConstraintOp::EQ,
-                        std::make_unique<RamTupleElement>(level, pos), std::move(rhs)),
+                        std::make_unique<RamTupleElement>(level, concretePos, false), std::move(rhs)),
                 std::move(op));
     };
 
-    for (auto* a : args) {
+    for (auto* a : concreteArgs) {
         if (auto* c = dynamic_cast<const AstConstant*>(a)) {
             auto* const c_num = dynamic_cast<const AstNumericConstant*>(c);
             assert((!c_num || c_num->getType()) && "numeric constant wasn't bound to a type");
-            op = mkFilter(c_num && *c_num->getType() == AstNumericConstant::Type::Float,
+            op = mkConcreteFilter(c_num && *c_num->getType() == AstNumericConstant::Type::Float,
                     translator.translateConstant(*c));
         } else if (auto* func = dynamic_cast<const AstFunctor*>(a)) {
             if (constrainByFunctors) {
-                op = mkFilter(func->getReturnType() == TypeAttribute::Float,
+                op = mkConcreteFilter(func->getReturnType() == TypeAttribute::Float,
                         translator.translateValue(func, valueIndex));
             }
         }
 
-        ++pos;
+        ++concretePos;
+    }
+
+    size_t latticePos = 0;
+
+    auto mkLatticeFilter = [&](bool isFloatArg, std::unique_ptr<RamExpression> rhs) {
+        return std::make_unique<RamFilter>(
+                std::make_unique<RamConstraint>(isFloatArg ? BinaryConstraintOp::FEQ : BinaryConstraintOp::EQ,
+                        std::make_unique<RamTupleElement>(level, latticePos, true), std::move(rhs)),
+                std::move(op));
+    };
+
+    for (auto* a : latticeArgs) {
+        if (auto* c = dynamic_cast<const AstConstant*>(a)) {
+            auto* const c_num = dynamic_cast<const AstNumericConstant*>(c);
+            assert((!c_num || c_num->getType()) && "numeric constant wasn't bound to a type");
+            op = mkLatticeFilter(c_num && *c_num->getType() == AstNumericConstant::Type::Float,
+                    translator.translateConstant(*c));
+        } else if (auto* func = dynamic_cast<const AstFunctor*>(a)) {
+            if (constrainByFunctors) {
+                op = mkLatticeFilter(func->getReturnType() == TypeAttribute::Float,
+                        translator.translateValue(func, valueIndex));
+            }
+        }
+
+        ++latticePos;
     }
 
     return op;
@@ -658,14 +695,19 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
     // handle facts
     if (isFact(clause)) {
         // translate arguments
-        std::vector<std::unique_ptr<RamExpression>> values;
+        std::vector<std::unique_ptr<RamExpression>> concreteValues;
         for (auto& arg : head->getConcreteArguments()) {
-            values.push_back(translator.translateValue(arg, ValueIndex()));
+            concreteValues.push_back(translator.translateValue(arg, ValueIndex()));
+        }
+
+        std::vector<std::unique_ptr<RamExpression>> latticeValues;
+        for (auto& arg : head->getLatticeArguments()) {
+            latticeValues.push_back(translator.translateValue(arg, ValueIndex()));
         }
 
         // create a fact statement
         return std::make_unique<RamQuery>(
-                std::make_unique<RamProject>(translator.translateRelation(head), std::move(values)));
+                std::make_unique<RamProject>(translator.translateRelation(head), std::move(concreteValues), std::move(latticeValues)));
     }
 
     // the rest should be rules
@@ -679,16 +721,27 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
 
     /* add equivalence constraints imposed by variable binding */
     for (const auto& cur : valueIndex.getVariableReferences()) {
-        // the first appearance
-        const Location& first = *cur.second.begin();
-        // all other appearances
-        for (const Location& loc : cur.second) {
-            if (first != loc && !valueIndex.isGenerator(loc.identifier)) {
-                // FIXME: equiv' for float types (`FEQ`)
+        auto iter = cur.second.begin();
+        const Location& first = *iter;
+        if (first.isLatticeElement) {
+            auto previousIter = iter;
+            ++iter;
+            while (iter != cur.second.end()) {
                 op = std::make_unique<RamFilter>(
-                        std::make_unique<RamConstraint>(
-                                BinaryConstraintOp::EQ, makeRamTupleElement(first), makeRamTupleElement(loc)),
+                        std::make_unique<RamLeqConstraint>(makeRamTupleElement(*iter), makeRamTupleElement(*previousIter)),
                         std::move(op));
+                ++previousIter;
+                ++iter;
+            }
+        } else {
+            for (const Location& loc : cur.second) {
+                if (first != loc && !valueIndex.isGenerator(loc.identifier)) {
+                    // FIXME: equiv' for float types (`FEQ`)
+                    op = std::make_unique<RamFilter>(
+                            std::make_unique<RamConstraint>(
+                                    BinaryConstraintOp::EQ, makeRamTupleElement(loc), makeRamTupleElement(first)),
+                            std::move(op));
+                }
             }
         }
     }
@@ -713,7 +766,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
                     auto loc = valueIndex.getGeneratorLoc(*agg);
                     // FIXME: equiv' for float types (`FEQ`)
                     op = std::make_unique<RamFilter>(std::make_unique<RamConstraint>(BinaryConstraintOp::EQ,
-                                                             std::make_unique<RamTupleElement>(curLevel, pos),
+                                                             std::make_unique<RamTupleElement>(curLevel, pos, false),
                                                              makeRamTupleElement(loc)),
                             std::move(op));
                 }
@@ -760,7 +813,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
 
                     // FIXME: equiv' for float types (`FEQ`)
                     addAggCondition(std::make_unique<RamConstraint>(BinaryConstraintOp::EQ,
-                            std::make_unique<RamTupleElement>(level, pos), std::move(value)));
+                            std::make_unique<RamTupleElement>(level, pos, false), std::move(value)));
                 };
                 for (auto* arg : atom->getConcreteArguments()) {
                     // variable bindings are issued differently since we don't want self
@@ -824,11 +877,16 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
         if (const auto* atom = dynamic_cast<const AstAtom*>(cur)) {
             // add constraints
             // TODO: do we wish to enable constraints by header functor? record inits do so...
-            op = filterByConstraints(level, atom->getConcreteArguments(), std::move(op), false);
+            op = filterByConstraints(level, atom->getConcreteArguments(), atom->getLatticeArguments(), std::move(op), false);
 
             // check whether all arguments are unnamed variables
             bool isAllArgsUnnamed = true;
             for (auto* argument : atom->getConcreteArguments()) {
+                if (dynamic_cast<AstUnnamedVariable*>(argument) == nullptr) {
+                    isAllArgsUnnamed = false;
+                }
+            }
+            for (auto* argument : atom->getLatticeArguments()) {
                 if (dynamic_cast<AstUnnamedVariable*>(argument) == nullptr) {
                     isAllArgsUnnamed = false;
                 }
@@ -841,8 +899,8 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
                     std::move(op));
 
             // add a scan level
-            if (atom->getConcreteArity() != 0 && !isAllArgsUnnamed) {
-                if (head->getConcreteArity() == 0) {
+            if ((atom->getConcreteArity() > 0 || atom->getLatticeArity() > 0) && !isAllArgsUnnamed) {
+                if (head->getConcreteArity() == 0 && head->getLatticeArity() == 0) {
                     op = std::make_unique<RamBreak>(
                             std::make_unique<RamNegation>(
                                     std::make_unique<RamEmptinessCheck>(translator.translateRelation(head))),
@@ -869,7 +927,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::ClauseTranslator::translateCla
             // TODO: support constants in nested records!
         } else if (const auto* rec = dynamic_cast<const AstRecordInit*>(cur)) {
             // add constant constraints
-            op = filterByConstraints(level, rec->getArguments(), std::move(op));
+            op = filterByConstraints(level, rec->getArguments(), std::vector<AstArgument*>(), std::move(op));
 
             // add an unpack level
             const Location& loc = valueIndex.getDefinitionPoint(*rec);
@@ -1012,17 +1070,21 @@ std::unique_ptr<RamStatement> AstToRamTranslator::translateRecursiveRelation(
 
     auto genMerge = [](const RamRelationReference* dest,
                             const RamRelationReference* src) -> std::unique_ptr<RamStatement> {
-        std::vector<std::unique_ptr<RamExpression>> values;
-        if (src->get()->getConcreteArity() == 0) {
+        std::vector<std::unique_ptr<RamExpression>> concreteValues;
+        for (std::size_t i = 0; i < src->get()->getConcreteArity(); i++) {
+            concreteValues.push_back(std::make_unique<RamTupleElement>(0, i, false));
+        }
+        std::vector<std::unique_ptr<RamExpression>> latticeValues;
+        for (std::size_t i = 0; i < src->get()->getLatticeArity(); i++) {
+            latticeValues.push_back(std::make_unique<RamTupleElement>(0, i, true));
+        }
+        if (src->get()->getConcreteArity() == 0 && src->get()->getLatticeArity() == 0) {
             return std::make_unique<RamQuery>(std::make_unique<RamFilter>(
                     std::make_unique<RamNegation>(std::make_unique<RamEmptinessCheck>(souffle::clone(src))),
-                    std::make_unique<RamProject>(souffle::clone(dest), std::move(values))));
-        }
-        for (std::size_t i = 0; i < dest->get()->getConcreteArity(); i++) {
-            values.push_back(std::make_unique<RamTupleElement>(0, i));
+                    std::make_unique<RamProject>(souffle::clone(dest), std::move(concreteValues), std::move(latticeValues))));
         }
         auto stmt = std::make_unique<RamQuery>(std::make_unique<RamScan>(souffle::clone(src), 0,
-                std::make_unique<RamProject>(souffle::clone(dest), std::move(values))));
+                std::make_unique<RamProject>(souffle::clone(dest), std::move(concreteValues), std::move(latticeValues))));
         if (dest->get()->getRepresentation() == RelationRepresentation::EQREL) {
             return std::make_unique<RamSequence>(
                     std::make_unique<RamExtend>(souffle::clone(dest), souffle::clone(src)), std::move(stmt));
@@ -1101,7 +1163,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::translateRecursiveRelation(
                 if (Global::config().has("provenance")) {
                     r1->addToBody(std::make_unique<AstProvenanceNegation>(souffle::clone(cl->getHead())));
                 } else {
-                    if (r1->getHead()->getConcreteArity() > 0) {
+                    if (r1->getHead()->getConcreteArity() > 0 || r1->getHead()->getLatticeArity() > 0) {
                         r1->addToBody(std::make_unique<AstNegation>(souffle::clone(cl->getHead())));
                     }
                 }
@@ -1409,7 +1471,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::makeNegationSubproofSubroutine
 
             // create existence checks to check if the tuple exists or not
             auto existenceCheck =
-                    std::make_unique<RamExistenceCheck>(souffle::clone(relRef), std::move(query));
+                    std::make_unique<RamExistenceCheck>(souffle::clone(relRef), std::move(query), std::vector<std::unique_ptr<RamExpression>>());
             auto negativeExistenceCheck = std::make_unique<RamNegation>(souffle::clone(existenceCheck));
 
             // return true if the tuple exists
@@ -1457,7 +1519,7 @@ std::unique_ptr<RamStatement> AstToRamTranslator::makeNegationSubproofSubroutine
 
             // create existence checks to check if the tuple exists or not
             auto existenceCheck =
-                    std::make_unique<RamExistenceCheck>(souffle::clone(relRef), std::move(query));
+                    std::make_unique<RamExistenceCheck>(souffle::clone(relRef), std::move(query), std::vector<std::unique_ptr<RamExpression>>());
             auto negativeExistenceCheck = std::make_unique<RamNegation>(souffle::clone(existenceCheck));
 
             // return true if the tuple exists
@@ -1714,7 +1776,11 @@ std::unique_ptr<RamTranslationUnit> AstToRamTranslator::translateUnit(AstTransla
     if (nullptr == ramMain) {
         ramMain = std::make_unique<RamSequence>();
     }
-    auto ramProg = std::make_unique<RamProgram>(std::move(rels), std::move(ramMain), std::move(ramSubs));
+    std::vector<std::unique_ptr<RamLattice>> lattices;
+    for (const auto& lat : program->getLattices()) {
+        lattices.push_back(std::make_unique<RamLattice>(lat->getName().toString(), lat->getBase().toString(), lat->getLeq().toString(), lat->getLub().toString(), lat->getGlb().toString(), lat->getBot().toString(), lat->getTop().toString()));
+    }
+    auto ramProg = std::make_unique<RamProgram>(std::move(rels), std::move(lattices), std::move(ramMain), std::move(ramSubs));
     if (!Global::config().get("debug-report").empty()) {
         if (ramProg) {
             auto ram_end = std::chrono::high_resolution_clock::now();

@@ -172,7 +172,7 @@ public:
         InterpreterSuperInstruction superOp = getExistenceSuperInstInfo(exists);
         // Check if the search signature is a total signature
         bool isTotal = true;
-        for (const auto& cur : exists.getValues()) {
+        for (const auto& cur : exists.getConcreteValues()) {
             if (isRamUndefValue(cur)) {
                 isTotal = false;
             }
@@ -731,7 +731,7 @@ private:
     InterpreterSuperInstruction getExistenceSuperInstInfo(const RamAbstractExistenceCheck& exist) {
         size_t arity = exist.getRelation().getConcreteArity();
         InterpreterSuperInstruction superOp(arity);
-        const auto& children = exist.getValues();
+        const auto& children = exist.getConcreteValues();
         for (size_t i = 0; i < arity; ++i) {
             auto& child = children[i];
             // Unbounded
@@ -767,7 +767,7 @@ private:
     InterpreterSuperInstruction getProjectSuperInstInfo(const RamProject& exist) {
         size_t arity = exist.getRelation().getConcreteArity();
         InterpreterSuperInstruction superOp(arity);
-        const auto& children = exist.getValues();
+        const auto& children = exist.getConcreteValues();
         for (size_t i = 0; i < arity; ++i) {
             auto& child = children[i];
             // Constant

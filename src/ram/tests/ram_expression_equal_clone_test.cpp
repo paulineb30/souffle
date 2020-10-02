@@ -98,8 +98,8 @@ TEST(RamUserDefinedOperator, CloneAndEquals) {
 
 TEST(RamTupleElement, CloneAndEquals) {
     // t0.1
-    RamTupleElement a(0, 1);
-    RamTupleElement b(0, 1);
+    RamTupleElement a(0, 1, false);
+    RamTupleElement b(0, 1, false);
     EXPECT_EQ(a, b);
     EXPECT_NE(&a, &b);
 
@@ -177,7 +177,7 @@ TEST(RamPackRecord, CloneAndEquals) {
     d_record.emplace_back(new RamSubroutineArgument(1));
     d_record.emplace_back(new RamSignedConstant(5));
     d_args.emplace_back(new RamPackRecord(std::move(d_record)));
-    d_args.emplace_back(new RamTupleElement(1, 3));
+    d_args.emplace_back(new RamTupleElement(1, 3, false));
     RamPackRecord d(std::move(d_args));
 
     std::vector<std::unique_ptr<RamExpression>> e_args;
@@ -186,7 +186,7 @@ TEST(RamPackRecord, CloneAndEquals) {
     e_record.emplace_back(new RamSubroutineArgument(1));
     e_record.emplace_back(new RamSignedConstant(5));
     e_args.emplace_back(new RamPackRecord(std::move(e_record)));
-    e_args.emplace_back(new RamTupleElement(1, 3));
+    e_args.emplace_back(new RamTupleElement(1, 3, false));
     RamPackRecord e(std::move(e_args));
 
     EXPECT_EQ(d, e);

@@ -40,10 +40,13 @@ namespace souffle {
 class RamAbstractExistenceCheck : public RamCondition {
 public:
     RamAbstractExistenceCheck(
-            std::unique_ptr<RamRelationReference> relRef, std::vector<std::unique_ptr<RamExpression>> vals)
-            : relationRef(std::move(relRef)), values(std::move(vals)) {
+            std::unique_ptr<RamRelationReference> relRef, std::vector<std::unique_ptr<RamExpression>> concreteVals, std::vector<std::unique_ptr<RamExpression>> latticeVals)
+            : relationRef(std::move(relRef)), concreteValues(std::move(concreteVals)), latticeValues(std::move(latticeVals)) {
         assert(relationRef != nullptr && "Relation reference is a nullptr");
-        for (const auto& v : values) {
+        for (const auto& v : concreteValues) {
+            assert(v != nullptr && "value is a nullptr");
+        }
+        for (const auto& v : latticeValues) {
             assert(v != nullptr && "value is a nullptr");
         }
     }
@@ -54,17 +57,29 @@ public:
     }
 
     /**
-     *  @brief Get arguments of the tuple/pattern
+     *  @brief Get concrete arguments of the tuple/pattern
      *  A null pointer element in the vector denotes an unspecified
      *  pattern for a tuple element.
      */
-    const std::vector<RamExpression*> getValues() const {
-        return toPtrVector(values);
+    const std::vector<RamExpression*> getConcreteValues() const {
+        return toPtrVector(concreteValues);
+    }
+
+    /**
+     *  @brief Get lattice arguments of the tuple/pattern
+     *  A null pointer element in the vector denotes an unspecified
+     *  pattern for a tuple element.
+     */
+    const std::vector<RamExpression*> getLatticeValues() const {
+        return toPtrVector(latticeValues);
     }
 
     std::vector<const RamNode*> getChildNodes() const override {
         std::vector<const RamNode*> res = {relationRef.get()};
-        for (const auto& cur : values) {
+        for (const auto& cur : concreteValues) {
+            res.push_back(cur.get());
+        }
+        for (const auto& cur : latticeValues) {
             res.push_back(cur.get());
         }
         return res;
@@ -72,35 +87,54 @@ public:
 
     void apply(const RamNodeMapper& map) override {
         relationRef = map(std::move(relationRef));
-        for (auto& val : values) {
+        for (auto& val : concreteValues) {
+            val = map(std::move(val));
+        }
+        for (auto& val : latticeValues) {
             val = map(std::move(val));
         }
     }
 
 protected:
     void print(std::ostream& os) const override {
-        os << "("
-           << join(values, ",",
-                      [](std::ostream& out, const std::unique_ptr<RamExpression>& value) {
-                          if (!value) {
-                              out << "_";
-                          } else {
-                              out << *value;
-                          }
-                      })
-           << ") ∈ " << getRelation().getName();
+        os << "(";
+        if (getRelation().getConcreteArity() > 0) {
+            os << join(concreteValues, ",",
+                       [](std::ostream& out, const std::unique_ptr<RamExpression>& value) {
+                           if (!value) {
+                               out << "_";
+                           } else {
+                               out << *value;
+                           }
+                       });
+        }
+        if (getRelation().getLatticeArity() > 0) {
+            os << "; ";
+            os << join(latticeValues, ",",
+                       [](std::ostream& out, const std::unique_ptr<RamExpression>& value) {
+                           if (!value) {
+                               out << "_";
+                           } else {
+                               out << *value;
+                           }
+                       });
+        }
+        os << ") ∈ " << getRelation().getName();
     }
 
     bool equal(const RamNode& node) const override {
         const auto& other = static_cast<const RamAbstractExistenceCheck&>(node);
-        return equal_ptr(relationRef, other.relationRef) && equal_targets(values, other.values);
+        return equal_ptr(relationRef, other.relationRef) && equal_targets(concreteValues, other.concreteValues) && equal_targets(latticeValues, other.latticeValues);
     }
 
     /** Relation */
     std::unique_ptr<RamRelationReference> relationRef;
 
-    /** Pattern -- nullptr if undefined */
-    std::vector<std::unique_ptr<RamExpression>> values;
+    /** Concrete pattern -- nullptr if undefined */
+    std::vector<std::unique_ptr<RamExpression>> concreteValues;
+
+    /** Lattice pattern -- nullptr if undefined */
+    std::vector<std::unique_ptr<RamExpression>> latticeValues;
 };
 
 }  // end of namespace souffle
